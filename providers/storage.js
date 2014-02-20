@@ -2,7 +2,8 @@
  * A storage provider using chrome's local extension storage pool.
  * @constructor
  */
-var Storage_chrome = function(channel) {
+var Storage_chrome = function(channel, dispatch) {
+  this.dispatchEvents = dispatch;
   this.channel = channel;
   console.log('storage_chrome: worker ' + self.location.href);
 };
