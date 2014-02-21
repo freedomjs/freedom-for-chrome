@@ -1,3 +1,5 @@
+/*globals chrome,fdom:true,console*/
+/*jslint indent:2,white:true,sloppy:true,sub:true */
 /**
  * A freedom.js interface to Chrome sockets
  * @constructor
@@ -42,7 +44,7 @@ var readSocket = function(socketId) {
     } else {
       console.error('Error with result code ' + readInfo.resultCode +
                   ' occured when reading from socket ' + socketId);
-    };
+    }
   }.bind(this);
   chrome.socket.read(socketId, null, dataRead);
 };
@@ -58,7 +60,11 @@ Socket_chrome.prototype.listen = function(socketId, address, port, callback) {
   chrome.socket.listen(socketId, address, port, null, function listenCallback(result) {
     callback(result);
     if (result === 0) {
-      var acceptCallback = function (acceptInfo) {
+      var acceptCallback,
+          acceptLoop = function() {
+            chrome.socket.accept(socketId, acceptCallback);
+      };
+      acceptCallback = function (acceptInfo) {
             if (acceptInfo.resultCode === 0) {
               this.dispatchEvent('onConnection',
                                          {serverSocketId: socketId,
@@ -66,14 +72,11 @@ Socket_chrome.prototype.listen = function(socketId, address, port, callback) {
               acceptLoop();
               readSocket.call(this, acceptInfo.socketId);
             } else if (acceptInfo.resultCode !== -15) {
-              console.error('Error ' + acceptInfo.resultCode
-                          + ' while trying to accept connection on socket '
-                              + socketId);
+              console.error('Error ' + acceptInfo.resultCode +
+                            ' while trying to accept connection on socket ' +
+                            socketId);
             }
       }.bind(this);
-      var acceptLoop = function() {
-            chrome.socket.accept(socketId, acceptCallback);
-      };
       acceptLoop();
     }
   }.bind(this));
@@ -92,3 +95,8 @@ Socket_chrome.prototype.disconnect = function(socketId, continuation) {
   }
   continuation();
 };
+
+/** REGISTER PROVIDER **/
+if (typeof fdom !== 'undefined') {
+  fdom.apis.register("core.socket", Socket_chrome);
+}
