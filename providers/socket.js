@@ -1,5 +1,5 @@
 /*globals chrome,fdom:true,console*/
-/*jslint indent:2,white:true,sloppy:true,sub:true */
+/*jslint indent:2,white:true,sloppy:true */
 /**
  * A freedom.js interface to Chrome sockets
  * @constructor
@@ -50,32 +50,33 @@ var readSocket = function(socketId) {
 };
 
 Socket_chrome.prototype.connect = function(socketId, hostname, port, callback) {
-  chrome.socket.connect(socketId, hostname, port, function connectCallback(result) {
+  chrome.socket.connect(socketId, hostname, port, function (result) {
     callback(result);
     readSocket.call(this, socketId);
   }.bind(this));
 };
 
 Socket_chrome.prototype.listen = function(socketId, address, port, callback) {
-  chrome.socket.listen(socketId, address, port, null, function listenCallback(result) {
+  chrome.socket.listen(socketId, address, port, null, function(result) {
     callback(result);
     if (result === 0) {
       var acceptCallback,
           acceptLoop = function() {
             chrome.socket.accept(socketId, acceptCallback);
-      };
+          };
       acceptCallback = function (acceptInfo) {
-            if (acceptInfo.resultCode === 0) {
-              this.dispatchEvent('onConnection',
-                                         {serverSocketId: socketId,
-                                          clientSocketId: acceptInfo.socketId});
-              acceptLoop();
-              readSocket.call(this, acceptInfo.socketId);
-            } else if (acceptInfo.resultCode !== -15) {
-              console.error('Error ' + acceptInfo.resultCode +
-                            ' while trying to accept connection on socket ' +
-                            socketId);
-            }
+        if (acceptInfo.resultCode === 0) {
+          this.dispatchEvent('onConnection', {
+            serverSocketId: socketId,
+            clientSocketId: acceptInfo.socketId
+          });
+          acceptLoop();
+          readSocket.call(this, acceptInfo.socketId);
+        } else if (acceptInfo.resultCode !== -15) {
+          console.error('Error ' + acceptInfo.resultCode +
+                        ' while trying to accept connection on socket ' +
+                        socketId);
+        }
       }.bind(this);
       acceptLoop();
     }

@@ -1,3 +1,6 @@
+/*globals chrome,fdom:true,console*/
+/*jslint indent:2,white:true,sloppy:true */
+
 /**
  * A storage provider using chrome's local extension storage pool.
  * @constructor
@@ -5,7 +8,6 @@
 var Storage_chrome = function(channel, dispatch) {
   this.dispatchEvents = dispatch;
   this.channel = channel;
-  console.log('storage_chrome: worker ' + self.location.href);
 };
 
 Storage_chrome.prototype.get = function(key, continuation) {
@@ -35,3 +37,8 @@ Storage_chrome.prototype.clear = function(continuation) {
   // console.log('storage_chrome: clear all');
   chrome.storage.local.clear(continuation);
 };
+
+/** REGISTER PROVIDER **/
+if (typeof fdom !== 'undefined') {
+  fdom.apis.register("core.storage", Storage_chrome);
+}

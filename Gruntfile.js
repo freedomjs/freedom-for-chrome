@@ -22,8 +22,8 @@ module.exports = function(grunt) {
           }
         },
         src: FILES.preamble
-            .concat('providers/*.js')
             .concat(FILES.src)
+            .concat('providers/*.js')
             .concat(FILES.postamble),
         dest: 'freedom.js'
       }
