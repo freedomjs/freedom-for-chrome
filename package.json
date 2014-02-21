@@ -16,12 +16,10 @@
     "url": "https://github.com/freedomjs/freedom-runtime-chrome"
   },
   "devDependencies": {
+    "freedom": "~0.3.1"
     "grunt": "~0.4.2",
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-jshint": "~0.8.0"
   },
   "scripts": {},
-  "dependencies": {
-    "freedom": "~0.3.1"
-  }
 }
