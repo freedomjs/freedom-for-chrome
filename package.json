@@ -22,6 +22,6 @@
   },
   "scripts": {},
   "dependencies": {
-    "freedom": "~0.3.0"
+    "freedom": "~0.3.1"
   }
 }
