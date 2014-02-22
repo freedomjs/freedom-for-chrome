@@ -1,7 +1,7 @@
 {
   "name": "freedom-runtime-chrome",
   "description": "Embracing a distributed web",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "homepage": "http://freedomjs.com",
   "bugs": {
     "url": "http://github.com/freedomjs/freedom-runtime-chrome/issues",
@@ -16,10 +16,10 @@
     "url": "https://github.com/freedomjs/freedom-runtime-chrome"
   },
   "devDependencies": {
-    "freedom": "~0.3.1"
+    "freedom": "~0.3.1",
     "grunt": "~0.4.2",
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-jshint": "~0.8.0"
   },
-  "scripts": {},
+  "scripts": {}
 }

@@ -1,7 +1,11 @@
 var FILES = require('freedom/Gruntfile.js').FILES;
 for (var key in FILES) {
   FILES[key] = FILES[key].map(function(str) {
-    return 'node_modules/freedom/' + str;
+    if (str[0] === '!') {
+      return '!node_modules/freedom/' + str.substr(1);
+    } else {
+      return 'node_modules/freedom/' + str;
+    }
   });
 }
 
