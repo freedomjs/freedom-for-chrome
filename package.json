@@ -1,7 +1,7 @@
 {
   "name": "freedom-runtime-chrome",
   "description": "Embracing a distributed web",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "homepage": "http://freedomjs.com",
   "bugs": {
     "url": "http://github.com/freedomjs/freedom-runtime-chrome/issues",
