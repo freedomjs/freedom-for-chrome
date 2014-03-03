@@ -71,8 +71,8 @@ Socket_chrome.prototype.read = function(socketId) {
       this.dispatchEvent('onData', {
         socketId: socketId,
         data: data
-      }.bind(this));
-    })
+      });
+    }.bind(this))
     .then(loop);
   }.bind(this, socketId);
   
