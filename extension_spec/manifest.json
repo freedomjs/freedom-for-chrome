@@ -1,0 +1,14 @@
+{
+  "manifest_version": 2,
+  "name": "FreeDOM Runtime Chrome Test environment",
+  "description": "Chrome app for testing freedom with privileged providers.",
+  "version": "0.0.1",
+  "app": {
+    "background": {
+      "page": "extension.html"
+    }
+  },
+  "permissions": [
+    { "socket": ["tcp-connect", "tcp-listen", "udp-send-to"] }
+  ]
+}

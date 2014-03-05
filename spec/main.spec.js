@@ -1,4 +1,5 @@
-
+var webdriverjs = require("webdriverjs");
+//console.log(Object.keys(process.env));
 
 describe("Main Test", function() {
 
@@ -6,15 +7,15 @@ describe("Main Test", function() {
   jasmine.getEnv().defaultTimeoutInterval = 30000;
 
   beforeEach(function() {
+    
     client = webdriverjs.remote({
       desiredCapabilities: {
         browserName: 'chrome',
         chromeOptions: {
-          // args: [
-          //   // ChromeDriver doesn't know about SOCKS proxies.
-          //   // (see its webdriver_capabilities_parser.cc)
-          //   '--load-extension=' + process.env['CHROME_EXTENSION_PATH']
-          // ]
+          args: [
+            '--load-extension=' + process.env['EXTENSION_PATH'],
+            '--user-data-dir=' + process.env['PROFILE_PATH']
+          ]
         }
       }
     });

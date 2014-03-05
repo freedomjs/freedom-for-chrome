@@ -1,5 +1,8 @@
 var selenium = require('selenium-standalone');
+var path = require('path');
 var FILES = require('freedom/Gruntfile.js').FILES;
+var temp = require('temporary');
+
 for (var key in FILES) {
   FILES[key] = FILES[key].map(function(str) {
     if (str[0] === '!') {
@@ -12,6 +15,8 @@ for (var key in FILES) {
 
 module.exports = function(grunt) {
   var server;
+  var temp_dir = new temp.Dir();
+  grunt.log.writeln("Temporary directory " + temp_dir.path + " created.");
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -35,7 +40,16 @@ module.exports = function(grunt) {
         dest: 'freedom.js'
       }
     },
+    env: {
+      jasmine_node: {
+        // Will be available to tests as process.env['CHROME_EXTENSION_PATH'].
+        EXTENSION_PATH: path.resolve('extension_spec'),
+        PROFILE_PATH: temp_dir.path
+      }
+    },
     jasmine_node: {
+      forceExit: true,
+      captureExceptions: true,
       projectRoot: "spec"
     }
   });
@@ -43,6 +57,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-jasmine-node');
+  grunt.loadNpmTasks('grunt-env');
+  grunt.loadNpmTasks('grunt-continue');
 
   grunt.registerTask('freedom-chrome', [
     'jshint:providers',
@@ -60,14 +76,20 @@ module.exports = function(grunt) {
     // TODO: This gives time for the server to start up and start
     // listening. At some point this should use something more
     // accurate than a constant wait.
-    setTimeout(done, 100);
+    setTimeout(done, 1000);
   });
   grunt.registerTask('stop-selenium-server', function() {
+    console.log("cleanup run");
     server.kill();
+    temp_dir.rmdir();
+    grunt.log.writeln("Temporary directory " + temp_dir.path + " removed.");
   });
   grunt.registerTask('test', [
     'start-selenium-server',
+    'env',
+    'continueOn',
     'jasmine_node',
-    'stop-selenium-server'
+    'stop-selenium-server',
+    'continueOff'
   ]);
 };
