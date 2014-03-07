@@ -141,7 +141,7 @@ Socket_chrome.prototype.listen = function(socketId, address, port, callback) {
           clientSocketId: acceptInfo.socketId
         });
         chrome.socket.accept(sid, acceptCallback);
-        this.read(sid);
+        this.read(acceptInfo.socketId);
       // -15 is socket_not_connected.
       } else if (acceptInfo.resultCode !== -15) {
         console.warn('Failed to accept on ' + sid + ': ' +
