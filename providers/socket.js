@@ -81,8 +81,8 @@ Socket_chrome.prototype.read = function(socketId) {
     this.dispatchEvent('onDisconnect', {
       socketId: socketId,
       error: err.message
-    }.bind(this, socketId));
-  });
+    });
+  }.bind(this, socketId));
 };
 
 /**
