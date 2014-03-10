@@ -12,5 +12,5 @@ cp freedom.js tools/freedomjs/release/freedom-chrome/freedom.latest.js
 
 cd tools/freedomjs
 git add .
-git commit -m FREEDOMCR/$COMMIT
+git commit -m $FREEDOMCR/$COMMIT
 git push origin master
