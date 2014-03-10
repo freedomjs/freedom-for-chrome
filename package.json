@@ -25,8 +25,8 @@
     "selenium-standalone": "~2.40.0",
     "grunt-env": "~0.4.1",
     "temporary": "~0.0.8",
-    "//": "TODO: Get rid of grunt-continue with version 0.4.4. See:",
-    "//": "https://github.com/gruntjs/grunt/issues/810",
+    "//": "TODO: Get rid of grunt-continue with version 0.4.4.",
+    "//": "See: https://github.com/gruntjs/grunt/issues/810",
     "grunt-continue": "~0.0.1"
   },
   "scripts": {}
