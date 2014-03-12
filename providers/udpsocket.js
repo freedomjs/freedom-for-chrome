@@ -34,7 +34,7 @@ UdpSocket_chrome.prototype.bind = function(address, port, continuation) {
           message: "Failed to Bind: " + bindResult
         });
       }
-    }.bind(this);
+    }.bind(this));
   }.bind(this));
 };
 
