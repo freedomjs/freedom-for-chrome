@@ -6,6 +6,7 @@
  * @private
  * @param {fdom.Port} channel the module creating this provider.
  * @param {Function} dispatchEvent Method for emitting events.
+ * @param {number?} id A pre-existing socket Id for the socket.
  */
 var Socket_chrome = function(channel, dispatchEvent, id) {
   this.dispatchEvent = dispatchEvent;
@@ -68,6 +69,7 @@ Socket_chrome.prototype.write = function(data, cb) {
       "errcode": "SOCKET_CLOSED",
       "message": "Cannot Write on Closed Socket"
     });
+    return;
   }
   chrome.socket.write(this.id, data, cb);
 };
