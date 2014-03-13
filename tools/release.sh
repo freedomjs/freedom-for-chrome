@@ -1,6 +1,6 @@
 #!/bin/bash
 # Get The locations that the current checked-out version lives.
-FREEDOMCR="https://github.com/freedomjs/freedom-runtime-chrome/commit"
+FREEDOMCR="https://github.com/freedomjs/freedom-for-chrome/commit"
 COMMIT=$(git rev-parse HEAD)
 TAG=$(git describe --abbrev=0 --tags)
 
