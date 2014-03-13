@@ -1,0 +1,10 @@
+{
+  "name": "Provider Test Helper",
+  "description": "Helper backend for tests involving provider APIs",
+  "app": {
+    "script": "providers.js"
+  },
+  "permissions": [
+   "core.socket", "core.storage"
+  ]
+}

@@ -14,7 +14,8 @@ describe("Main Test", function() {
         chromeOptions: {
           args: [
             '--load-extension=' + process.env['EXTENSION_PATH'],
-            '--user-data-dir=' + process.env['PROFILE_PATH']
+            '--user-data-dir=' + process.env['PROFILE_PATH'],
+            '--disable-web-security'
           ]
         }
       }

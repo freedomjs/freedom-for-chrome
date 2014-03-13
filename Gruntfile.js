@@ -13,6 +13,10 @@ for (var key in FILES) {
   });
 }
 
+var SPEC_APP_LOCATION = 'build_spec/';
+
+
+
 module.exports = function(grunt) {
   var server;
   var temp_dir = new temp.Dir();
@@ -40,10 +44,37 @@ module.exports = function(grunt) {
         dest: 'freedom.js'
       }
     },
+    copy: {
+      extension: {
+        cwd: 'helper/extension/',
+        src: '*',
+        dest: SPEC_APP_LOCATION,
+        expand: true
+      },
+      specs: {
+        cwd: 'extension_spec',
+        src: '*',
+        dest: SPEC_APP_LOCATION,
+        expand: true
+      },
+      providers: {
+        src: 'providers/*',
+        dest: SPEC_APP_LOCATION
+      },
+      grunt: {
+        src: '.grunt/grunt-contrib-jasmine/*',
+        dest: SPEC_APP_LOCATION
+      },
+      freedom: {
+        src: 'freedom.js',
+        dest: SPEC_APP_LOCATION
+      }
+    },
+    clean: ["build_spec"],
     env: {
       jasmine_node: {
-        // Will be available to tests as process.env['CHROME_EXTENSION_PATH'].
-        EXTENSION_PATH: path.resolve('extension_spec'),
+        // Will be available to tests as process.env['EXTENSION_PATH'].
+        EXTENSION_PATH: SPEC_APP_LOCATION,
         PROFILE_PATH: temp_dir.path
       }
     },
@@ -51,11 +82,26 @@ module.exports = function(grunt) {
       forceExit: true,
       captureExceptions: true,
       projectRoot: "spec"
+    },
+    jasmine: {
+      runner: {
+        src: [SPEC_APP_LOCATION + 'providers/*.js'],
+        options: {
+          specs: [SPEC_APP_LOCATION + 'main.spec.js'],
+          template: 'helper/template.tmpl',
+          outfile: SPEC_APP_LOCATION + 'SpecRunner.html'
+        }
+      }
     }
   });
 
   grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-copy');
+  grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  // TODO: Replace grunt-contrib-jasmine with just templating for spec
+  // runner generation.
+  grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-jasmine-node-coverage');
   grunt.loadNpmTasks('grunt-env');
   grunt.loadNpmTasks('grunt-continue');
@@ -65,6 +111,10 @@ module.exports = function(grunt) {
     'concat'
   ]);
   grunt.registerTask('default', ['freedom-chrome']);
+  grunt.registerTask('buildSpecApp', [
+    'copy',
+    'jasmine:runner:build'
+  ]);
   grunt.registerTask('start-selenium-server', function() {
     var done = this.async();
     var spawnOptions = { stdio: 'pipe' };
@@ -79,12 +129,13 @@ module.exports = function(grunt) {
     setTimeout(done, 1000);
   });
   grunt.registerTask('stop-selenium-server', function() {
-    console.log("cleanup run");
+    grunt.log.writeln("cleanup run");
     server.kill();
     temp_dir.rmdir();
     grunt.log.writeln("Temporary directory " + temp_dir.path + " removed.");
   });
   grunt.registerTask('test', [
+    'buildSpecApp',
     'start-selenium-server',
     'env',
     'continueOn',
@@ -93,3 +144,5 @@ module.exports = function(grunt) {
     'continueOff'
   ]);
 };
+
+

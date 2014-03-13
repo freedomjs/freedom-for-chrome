@@ -1,4 +1,6 @@
 freedom.js
+build_spec/
+.grunt/
 
 npm-debug.log
 node_modules
