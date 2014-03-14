@@ -73,14 +73,14 @@ module.exports = function(grunt) {
     clean: ["build_spec"],
     env: {
       jasmine_node: {
-        // Will be available to tests as process.env['EXTENSION_PATH'].
         EXTENSION_PATH: SPEC_APP_LOCATION,
-        PROFILE_PATH: temp_dir.path
+        PROFILE_PATH: temp_dir.path,
+        SPEC_PATH: path.resolve(SPEC_APP_LOCATION, 'SpecRunner.html')
       }
     },
     jasmine_node: {
       forceExit: true,
-      captureExceptions: true,
+      captureExceptions: false,
       projectRoot: "spec"
     },
     jasmine: {
@@ -102,7 +102,7 @@ module.exports = function(grunt) {
   // TODO: Replace grunt-contrib-jasmine with just templating for spec
   // runner generation.
   grunt.loadNpmTasks('grunt-contrib-jasmine');
-  grunt.loadNpmTasks('grunt-jasmine-node-coverage');
+  grunt.loadNpmTasks('grunt-jasmine-node');
   grunt.loadNpmTasks('grunt-env');
   grunt.loadNpmTasks('grunt-continue');
 
@@ -137,8 +137,8 @@ module.exports = function(grunt) {
   grunt.registerTask('test', [
     'buildSpecApp',
     'start-selenium-server',
-    'env',
     'continueOn',
+    'env',
     'jasmine_node',
     'stop-selenium-server',
     'continueOff'

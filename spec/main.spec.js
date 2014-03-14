@@ -11,24 +11,23 @@ describe("Main Test", function() {
     client = webdriverjs.remote({
       desiredCapabilities: {
         browserName: 'chrome',
-        chromeOptions: {
-          args: [
-            '--load-extension=' + process.env['EXTENSION_PATH'],
-            '--user-data-dir=' + process.env['PROFILE_PATH'],
-            '--disable-web-security'
-          ]
-        }
+        // chromeOptions: {
+        //   args: [
+        //     '--load-extension=' + process.env['EXTENSION_PATH'],
+        //     '--user-data-dir=' + process.env['PROFILE_PATH'],
+        //     '--disable-web-security'
+        //   ]
+        // }
       }
     });
     client.init();
   });
 
-  it('example.com', function(done) {
+  it('Jasmine Runner', function(done) {
     client
-      .url('http://example.com/')
-      .getTitle(function(err, title) {
+      .url('file://' + process.env['SPEC_PATH'])
+      .getText('.passed', function(err, text) {
         expect(err).toBe(null);
-        expect(title).toBe('Example Domain');
       })
       .call(done);
   });
