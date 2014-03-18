@@ -9,6 +9,7 @@
  * @param {number?} id A pre-existing socket Id for the socket.
  */
 var Socket_chrome = function(channel, dispatchEvent, id) {
+  console.warn(id);
   this.dispatchEvent = dispatchEvent;
   this.id = id || undefined;
   if (this.id) {
@@ -21,7 +22,7 @@ var Socket_chrome = function(channel, dispatchEvent, id) {
  * @method getInfo
  * @return {Object} connection and address information about the socket.
  */
-Socket_chrome.prototype.getinfo = function(continuation) {
+Socket_chrome.prototype.getInfo = function(continuation) {
   if (this.id) {
     chrome.socket.getInfo(this.id, continuation);
   } else {
