@@ -1,0 +1,15 @@
+<html>
+<script type='text/javascript'>
+window.addEventListener('message', function(msg) {
+  document.getElementById('data').innerHTML = msg.data;
+  localStorage.setItem('key', msg.data);
+});
+
+window.addEventListener('storage', function(ev) {
+  document.getElementById('data').innerHTML = msg.newValue;
+});
+
+</script>
+<div id='data'>
+</div>
+</html>
