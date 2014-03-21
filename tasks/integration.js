@@ -22,6 +22,7 @@ module.exports = function (grunt) {
     async.series([
       async.apply(buildSpec, ctx),
       async.apply(startSelenium, ctx),
+      async.apply(startDriver, ctx),
       async.apply(runTests, ctx),
       async.apply(cleanup, ctx)
     ], done);
@@ -67,7 +68,15 @@ module.exports = function (grunt) {
       '-debug'
     ];
     ctx.server = selenium(spawnOptions, seleniumArgs);
+    
+    // Give Time for server to start.
+    setTimeout(function() {
+      grunt.log.writeln('Done.');
+      next();
+    }, 1000);
+  };
 
+  function startDriver(ctx,next) {
     ctx.driver = driver.init({
       browserName:'chrome',
       chromeOptions: {
@@ -83,12 +92,14 @@ module.exports = function (grunt) {
   }
   
   function runTests(ctx, next) {
+    grunt.log.write('Running Tests...');
     grunt.log.writeln('Done.');
     next();
   }
   
   function cleanup(ctx, next) {
     ctx.driver.quit().done();
+    ctx.browser.stop();
     if (ctx.dir) {
       ctx.dir.rmdir();
     }
