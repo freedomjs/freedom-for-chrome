@@ -18,6 +18,7 @@ module.exports = function (grunt) {
       template: 'spec/helper/',
       templateId: '',
       spec: 'spec/',
+      helper: undefined,
       keepBrowser: false,
       timeout : 10000
     });
@@ -37,6 +38,9 @@ module.exports = function (grunt) {
     var dest = ctx.dir.path + '/app';
 
     var scripts = glob.sync(ctx.spec);
+    if (ctx.helper) {
+      scripts = scripts.concat(glob.sync(ctx.helper));
+    }
     var tags = "";
     
     fs.mkdirSync(dest);

@@ -37,7 +37,9 @@ module.exports = function(grunt) {
       chrome: {
         options: {
           templateId: 'khhlpmfebmkkibipnllkeanfadmigbnj',
-          spec: 'spec/*.js'
+          spec: 'spec/*.js',
+          helper: 'providers/*.js',
+          keepBrowser: true
         }
       }
     }
