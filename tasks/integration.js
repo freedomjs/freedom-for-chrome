@@ -18,6 +18,8 @@ module.exports = function (grunt) {
       template: 'spec/helper/',
       templateId: '',
       spec: 'spec/',
+      keepBrowser: false,
+      timeout : 10000
     });
 
     async.series([
@@ -36,7 +38,6 @@ module.exports = function (grunt) {
 
     var scripts = glob.sync(ctx.spec);
     var tags = "";
-    var buffer = new Buffer(tags);
     
     fs.mkdirSync(dest);
     fs.mkdirSync(dest + '/spec');
@@ -47,6 +48,7 @@ module.exports = function (grunt) {
       fs.mkdirpSync(dest + '/spec/' + parent);
       fs.copySync(s, dest + '/spec/' + s);
     }
+    var buffer = new Buffer(tags);
     
     fs.copySync(ctx.template, dest);
     var fd = fs.openSync(dest + '/main.html', 'a');
@@ -88,16 +90,64 @@ module.exports = function (grunt) {
     });
   }
   
+  function testPoll(driver, cb) {
+    driver.eval("jsApiReporter.finished").then(function(response) {
+      if (response) {
+        cb();
+      } else {
+        testPoll(driver, cb);
+      }
+    })
+  }
+  
   function runTests(ctx, next) {
     grunt.log.write('Running Tests...');
-    ctx.driver.title().then(function(title) {
+    testPoll(ctx.driver, function() {
       grunt.log.writeln('Done.');
-      next();
+      ctx.driver.eval("JSON.stringify(jsApiReporter.specs())").then(function(result) {
+        var parse = JSON.parse(result);
+        ctx.status = {failed: 0};
+        for (var i = 0; i < parse.length; i++) {
+          var spec = parse[i];
+          if (process.stdout.clearLine) {
+            var chalk = require('chalk');
+            process.stdout.clearLine();
+            process.stdout.cursorTo(0);
+            if (spec.status === 'passed') {
+              grunt.log.writeln(chalk.green.bold('✓') + '\t' + spec.fullName);
+            } else if (spec.status === 'failed') {
+              ctx.status.failed++;
+              grunt.log.writeln(chalk.red.bold('X') + '\t' + spec.fullName);
+            } else {
+              grunt.log.writeln(chalk.yellow.bold('*') + '\t' + spec.fullName);
+            }
+          } else {
+            if (spec.status === 'passed') {
+              grunt.log.writeln('✓' + spec.fullName);
+            } else if (spec.status === 'failed') {
+              ctx.status.failed++;
+              grunt.log.writeln('X' + spec.fullName);
+            } else {
+              grunt.log.writeln('*' + spec.fullName);
+            }
+          }
+        }
+        next();
+      });
     });
   }
   
   function cleanup(ctx, next) {
-    grunt.log.write('Cleaning Up...');
+    if (ctx.status.failed === 0) {
+      grunt.log.ok('0 failures');
+    } else {
+      grunt.log.error(ctx.status.failed + ' failures');
+    }
+    if (ctx.keepBrowser) {
+      fs.removeSync(ctx.dir.path);
+      next();
+      return;
+    }
     ctx.driver.quit().then(function() {
       if (ctx.dir) {
         fs.removeSync(ctx.dir.path);
@@ -105,7 +155,6 @@ module.exports = function (grunt) {
       if (ctx.server) {
         ctx.server.kill();
       }
-      grunt.log.writeln('Done.');
       next();
     });
   }
