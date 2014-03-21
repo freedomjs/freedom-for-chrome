@@ -36,6 +36,7 @@ module.exports = function(grunt) {
     integration: {
       chrome: {
         options: {
+          templateId: 'khhlpmfebmkkibipnllkeanfadmigbnj',
           spec: 'spec/*.js'
         }
       }

@@ -16,7 +16,8 @@ module.exports = function (grunt) {
 
     var ctx = this.options({
       template: 'spec/helper/',
-      spec: 'spec/'
+      templateId: '',
+      spec: 'spec/',
     });
 
     async.series([
@@ -35,28 +36,23 @@ module.exports = function (grunt) {
 
     var scripts = glob.sync(ctx.spec);
     var tags = "";
-    for (var i = 0; i < scripts.length; i++) {
-      tags += "<script type='text/javascript' src='" + scripts[i] + "'></script>";
-    }
-    tags += "<script type='text/javascript' src='definitions.js'></script>";
     var buffer = new Buffer(tags);
-
-    var dfn = "";
-    dfn += "var FILEBASE='" + ctx.dir.path + "';";
     
     fs.mkdirSync(dest);
     fs.mkdirSync(dest + '/spec');
-    async.each(scripts, function(s, cb) {
-      fs.copy(s, dest + '/spec', cb);
-    }, function() {
-      fs.copy(ctx.template, dest, function() {
-        var fd = fs.openSync(dest + '/main.html', 'a');
-        fs.writeSync(fd, buffer, 0, buffer.length, null);
-        fs.writeFileSync(dest + '/definitions.js', dfn);
-        grunt.log.writeln('Done.');
-        next();
-      });
-    });
+    for (var i = 0; i < scripts.length; i++) {
+      var s = scripts[i];
+      tags += "<script type='text/javascript' src='spec/" + s + "'></script>";
+      var parent = path.dirname(s);
+      fs.mkdirpSync(dest + '/spec/' + parent);
+      fs.copySync(s, dest + '/spec/' + s);
+    }
+    
+    fs.copySync(ctx.template, dest);
+    var fd = fs.openSync(dest + '/main.html', 'a');
+    fs.writeSync(fd, buffer, 0, buffer.length, null);
+    grunt.log.writeln('Done.');
+    next();
   }
   
   function startSelenium(ctx, next) {
@@ -77,35 +73,40 @@ module.exports = function (grunt) {
   };
 
   function startDriver(ctx,next) {
+    grunt.log.write('Starting Browser...');
     ctx.driver = driver.init({
       browserName:'chrome',
       chromeOptions: {
         args: [
-          "--load-and-launch-app=" + ctx.dir.path + '/app',
-          "--user-data-dir=" + ctx.dir.path,
-          "--allow-file-access"
+          "--load-extension=" + ctx.dir.path + '/app',
+          "--user-data-dir=" + ctx.dir.path
         ]
       }
-    })
-    .get(ctx.dir.path + 'app/connector.html')
-    .then(next);
+    }).title().then(function(title) {
+      grunt.log.writeln('Done.');
+      ctx.driver.get('chrome-extension://' + ctx.templateId + '/main.html').then(next);
+    });
   }
   
   function runTests(ctx, next) {
     grunt.log.write('Running Tests...');
-    grunt.log.writeln('Done.');
-    next();
+    ctx.driver.title().then(function(title) {
+      grunt.log.writeln('Done.');
+      next();
+    });
   }
   
   function cleanup(ctx, next) {
-    ctx.driver.quit().done();
-    ctx.browser.stop();
-    if (ctx.dir) {
-      ctx.dir.rmdir();
-    }
-    if (ctx.server) {
-      ctx.server.kill();
-    }
-    next();
+    grunt.log.write('Cleaning Up...');
+    ctx.driver.quit().then(function() {
+      if (ctx.dir) {
+        fs.removeSync(ctx.dir.path);
+      }
+      if (ctx.server) {
+        ctx.server.kill();
+      }
+      grunt.log.writeln('Done.');
+      next();
+    });
   }
 };
