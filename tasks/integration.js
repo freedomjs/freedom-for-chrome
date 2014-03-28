@@ -2,6 +2,7 @@
 
 module.exports = function (grunt) {
   var selenium = require('selenium-standalone');
+  var http = require('http');
   var driver = require('wd').promiseChainRemote();
   var path = require('path');
   var temp = require('temporary');
@@ -20,8 +21,16 @@ module.exports = function (grunt) {
       spec: 'spec/',
       helper: undefined,
       keepBrowser: false,
+      port: 9989,
       timeout : 10000
     });
+    
+    ctx.done = done;
+    
+    process.on('SIGINT', function() {
+      cleanup(ctx);
+    });
+    ctx.cleanupTimeout = setTimeout(cleanup.bind({}, ctx), ctx.timeout);
 
     async.series([
       async.apply(buildSpec, ctx),
@@ -71,6 +80,11 @@ module.exports = function (grunt) {
     ];
     ctx.server = selenium(spawnOptions, seleniumArgs);
     
+    ctx.web = http.createServer(function (req, res) {
+      res.writeHead(200, {'Content-Type': 'text/html'});
+      res.end('');
+    }).listen(ctx.port);
+    
     // Give Time for server to start.
     setTimeout(function() {
       grunt.log.writeln('Done.');
@@ -84,31 +98,32 @@ module.exports = function (grunt) {
       browserName:'chrome',
       chromeOptions: {
         args: [
-          "--load-extension=" + ctx.dir.path + '/app',
+          "--load-and-launch-app=" + ctx.dir.path + '/app',
           "--user-data-dir=" + ctx.dir.path
         ]
       }
     }).title().then(function(title) {
       grunt.log.writeln('Done.');
-      ctx.driver.get('chrome-extension://' + ctx.templateId + '/main.html').then(next);
+      ctx.driver.get('http://localhost:' + ctx.port).then(next);
     });
   }
   
-  function testPoll(driver, cb) {
-    driver.eval("jsApiReporter.finished").then(function(response) {
+  function testPoll(dri, cb) {
+    dri.eval("jsApiReporter.finished").then(function(response) {
       if (response) {
         cb();
       } else {
-        testPoll(driver, cb);
+        setTimeout(testPoll.bind({}, dri, cb), 500);
       }
-    })
+    });
   }
   
   function runTests(ctx, next) {
     grunt.log.write('Running Tests...');
-    testPoll(ctx.driver, function() {
+    testPoll(ctx.driver, function(ctx) {
       grunt.log.writeln('Done.');
       ctx.driver.eval("JSON.stringify(jsApiReporter.specs())").then(function(result) {
+        console.warn('test results: ' + result);
         var parse = JSON.parse(result);
         ctx.status = {failed: 0};
         for (var i = 0; i < parse.length; i++) {
@@ -137,12 +152,24 @@ module.exports = function (grunt) {
           }
         }
         next();
+      }, function(err) {
+        grunt.log.writeln(chalk.red.bold('Error!'))
+        grunt.log.writeln(err);
+        next();
       });
-    });
+    }.bind({}, ctx));
   }
   
   function cleanup(ctx, next) {
-    if (ctx.status.failed === 0) {
+    if (ctx.cleanupTimeout) {
+      clearTimeout(ctx.cleanupTimeout);
+    }
+    if (!next) {
+      next = ctx.done;
+    }
+    if (!ctx.status) {
+      grunt.log.error('Timed out');
+    } else if (ctx.status.failed === 0) {
       grunt.log.ok('0 failures');
     } else {
       grunt.log.error(ctx.status.failed + ' failures');
