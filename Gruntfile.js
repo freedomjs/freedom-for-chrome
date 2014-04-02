@@ -91,6 +91,12 @@ module.exports = function(grunt) {
           template: 'helper/template.tmpl',
           outfile: SPEC_APP_LOCATION + 'SpecRunner.html'
         }
+      },
+      unit: {
+        src: ['providers/*.js'],
+        options: {
+          specs: ['spec/*.unit.spec.js']
+        }
       }
     }
   });
@@ -143,6 +149,7 @@ module.exports = function(grunt) {
     'stop-selenium-server',
     'continueOff'
   ]);
+  grunt.registerTask('unit', ['jasmine:unit']);
 };
 
 

@@ -43,7 +43,7 @@ UdpSocket_chrome.prototype.bind = function(address, port, continuation) {
  * @method getInfo
  * @return {Object} connection and address information about the socket.
  */
-UdpSocket_chrome.prototype.getinfo = function(continuation) {
+UdpSocket_chrome.prototype.getInfo = function(continuation) {
   if (this.id) {
     chrome.socket.getInfo(this.id, continuation);
   } else {
