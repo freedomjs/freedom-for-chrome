@@ -41,7 +41,7 @@ module.exports = function(grunt) {
             .concat(FILES.src)
             .concat('providers/*.js')
             .concat(FILES.postamble),
-        dest: 'freedom.js'
+        dest: 'freedom-for-chrome.js'
       }
     },
     copy: {
@@ -66,7 +66,7 @@ module.exports = function(grunt) {
         dest: SPEC_APP_LOCATION
       },
       freedom: {
-        src: 'freedom.js',
+        src: 'freedom-for-chrome.js',
         dest: SPEC_APP_LOCATION
       }
     },
