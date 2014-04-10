@@ -13,8 +13,5 @@
 	"permissions": [
 		{"socket":["tcp-connect","udp-send-to","udp-bind"]},
         "storage"
-	],
-  "externally_connectable": {
-    "matches": ["http://localhost:9989/*"]
-  }
+	]
 }

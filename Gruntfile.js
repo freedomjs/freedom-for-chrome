@@ -39,7 +39,7 @@ module.exports = function(grunt) {
           templateId: 'khhlpmfebmkkibipnllkeanfadmigbnj',
           spec: 'spec/*.js',
           helper: 'providers/*.js',
-          keepBrowser: true
+          keepBrowser: false
         }
       }
     }

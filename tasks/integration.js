@@ -19,6 +19,7 @@ module.exports = function (grunt) {
       template: 'spec/helper/',
       templateId: '',
       spec: 'spec/',
+      runId: Math.round(Math.random() * 100000),
       helper: undefined,
       keepBrowser: false,
       port: 9989,
@@ -61,6 +62,7 @@ module.exports = function (grunt) {
       fs.mkdirpSync(dest + '/spec/' + parent);
       fs.copySync(s, dest + '/spec/' + s);
     }
+    tags += "<script type='text/javascript' src='relay.js?id=freedomforchrome" + ctx.runId + "'></script>";
     var buffer = new Buffer(tags);
     
     fs.copySync(ctx.template, dest);
@@ -82,7 +84,17 @@ module.exports = function (grunt) {
     
     ctx.web = http.createServer(function (req, res) {
       res.writeHead(200, {'Content-Type': 'text/html'});
-      res.end('');
+      res.end('<html>' +
+              '<script type=text/javascript>' +
+              'window.messages = [];' +
+              'var ws = new WebSocket("wss://p2pbr.com/route/freedomforchrome' + ctx.runId + '");' +
+              'ws.onmessage = function(m) {' + 
+              '  var msg = JSON.parse(m.data);' +
+              '  if (msg.cmd == "message") {' +
+              '  window.messages.push(msg.msg);' +
+              '}}' +
+              '</script>' +
+              '</html>');
     }).listen(ctx.port);
     
     // Give Time for server to start.
@@ -109,7 +121,7 @@ module.exports = function (grunt) {
   }
   
   function testPoll(dri, cb) {
-    dri.eval("jsApiReporter.finished").then(function(response) {
+    dri.eval("window.messages.length > 0").then(function(response) {
       if (response) {
         cb();
       } else {
@@ -122,8 +134,7 @@ module.exports = function (grunt) {
     grunt.log.write('Running Tests...');
     testPoll(ctx.driver, function(ctx) {
       grunt.log.writeln('Done.');
-      ctx.driver.eval("JSON.stringify(jsApiReporter.specs())").then(function(result) {
-        console.warn('test results: ' + result);
+      ctx.driver.eval("JSON.stringify(window.messages[0])").then(function(result) {
         var parse = JSON.parse(result);
         ctx.status = {failed: 0};
         for (var i = 0; i < parse.length; i++) {
