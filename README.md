@@ -12,7 +12,7 @@ Using Directly
 --------------
 
 Download the latest
-[```freedom.js```](http://freedomjs.org/release/freedom-chrome/freedom.latest.js)
+[```freedom-for-chrome.js```](http://freedomjs.org/release/freedom-chrome/freedom-for-chrome.latest.js)
 release and include it in your app either in your background page (if you want
 persistant funcitionality), or in your launch page (if you do not).
 
@@ -25,7 +25,7 @@ If you are using npm-based dependency management for your app, you can
     npm install --save freedom-for-chrome
 
 The npm distribution contains a prebuilt version of the output file, which
-can be linked to at ```node_modules/freedom-for-chrome/freedom.js```.
+can be linked to at ```node_modules/freedom-for-chrome/freedom-for-chrome.js```.
 
 Reporting Issues
 ----------------

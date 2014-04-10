@@ -8,8 +8,8 @@ rm -rf tools/freedomjs
 git clone git@github.com:freedomjs/freedomjs.github.io.git tools/freedomjs
 mkdir -p tools/freedomjs/release/freedom-chrome
 
-cp freedom.js tools/freedomjs/release/freedom-chrome/freedom.$TAG.js
-cp freedom.js tools/freedomjs/release/freedom-chrome/freedom.latest.js
+cp freedom-for-chrome.js tools/freedomjs/release/freedom-chrome/freedom-for-chrome.$TAG.js
+cp freedom-for-chrome.js tools/freedomjs/release/freedom-chrome/freedom-for-chrome.latest.js
 
 cd tools/freedomjs
 git add .

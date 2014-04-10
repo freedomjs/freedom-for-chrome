@@ -30,24 +30,30 @@ module.exports = function(grunt) {
             .concat(FILES.src)
             .concat('providers/*.js')
             .concat(FILES.postamble),
-        dest: 'freedom.js'
+        dest: 'freedom-for-chrome.js'
       }
     },
     integration: {
-      chrome: {
+      providers: {
         options: {
           templateId: 'khhlpmfebmkkibipnllkeanfadmigbnj',
-          spec: 'spec/*.js',
+          spec: 'spec/*.integration.spec.js',
           helper: 'providers/*.js',
           keepBrowser: false
+        }
+      }
+    },
+    jasmine: {
+      unit: {
+        src: ['providers/*.js'],
+        options: {
+          specs: ['spec/*.unit.spec.js']
         }
       }
     }
   });
 
   grunt.loadNpmTasks('grunt-contrib-concat');
-  grunt.loadNpmTasks('grunt-contrib-copy');
-  grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-jshint');
 
   grunt.loadTasks('tasks');
@@ -57,9 +63,11 @@ module.exports = function(grunt) {
     'concat'
   ]);
   grunt.registerTask('test', [
-    'integration'
+    'integration',
+    'jasmine'
   ]);
   grunt.registerTask('default', ['build', 'test']);
+  grunt.registerTask('unit', ['jasmine']);
 };
 
 
