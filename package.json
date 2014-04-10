@@ -23,6 +23,7 @@
     "glob": "^3.2.9",
     "grunt": "~0.4.2",
     "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-jasmine": "~0.6.1",
     "grunt-contrib-jshint": "~0.8.0",
     "selenium-standalone": "~2.40.0",
     "temporary": "~0.0.8",

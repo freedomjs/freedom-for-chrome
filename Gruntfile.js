@@ -54,6 +54,7 @@ module.exports = function(grunt) {
   });
 
   grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-contrib-jshint');
 
   grunt.loadTasks('tasks');
@@ -64,10 +65,10 @@ module.exports = function(grunt) {
   ]);
   grunt.registerTask('test', [
     'integration',
-    'jasmine'
+    'jasmine:unit'
   ]);
   grunt.registerTask('default', ['build', 'test']);
-  grunt.registerTask('unit', ['jasmine']);
+  grunt.registerTask('unit', ['jasmine:unit']);
 };
 
 
