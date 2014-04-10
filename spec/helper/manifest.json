@@ -1,0 +1,17 @@
+{
+	"name": "Spec Runner",
+	"version": "0.1",
+	"manifest_version": 2,
+    "app": {
+      "background": {
+        "scripts": [
+          "background.js"
+        ]
+      }
+	},
+    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8en4DVUkifnTu38fDH+TMK0A004KPPwnUAUMs9BxHJYJU4jiZeloiXJ1GW0z/bpvVU4qQZpERgHibbpyZaZDwjNqzo6Fb2i4J30jj2H6GnauTi6IXPpecAuTWpS8jy/HqDDXnk5bVwE4ifS9wQ2smwAdUJtdk8mCzNYv/5Xfw1uNt84NRdTUve8177OwbtiZjZ4Buh4GAePWxQNg20MzKela62bqTyLpU4iwXrekyR5h1hz4hFEVwh9XKarNskbqlw46Kh5ch39hcJu7bKQTf3tf++AjUaRJuPo4DKOtT8fp8edPn/uCv3fSpKF29eleo7AioSefNUzUmDo4NmFu5QIDAQAB",
+	"permissions": [
+		{"socket":["tcp-connect","udp-send-to","udp-bind"]},
+        "storage"
+	]
+}

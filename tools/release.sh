@@ -4,6 +4,7 @@ FREEDOMCR="https://github.com/freedomjs/freedom-for-chrome/commit"
 COMMIT=$(git rev-parse HEAD)
 TAG=$(git describe --abbrev=0 --tags)
 
+rm -rf tools/freedomjs
 git clone git@github.com:freedomjs/freedomjs.github.io.git tools/freedomjs
 mkdir -p tools/freedomjs/release/freedom-chrome
 

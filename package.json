@@ -16,19 +16,21 @@
     "url": "https://github.com/freedomjs/freedom-for-chrome"
   },
   "devDependencies": {
+    "async": "^0.2.10",
+    "chalk": "^0.4.0",
     "freedom": "~0.4.4",
+    "fs-extra": "^0.8.1",
+    "glob": "^3.2.9",
     "grunt": "~0.4.2",
     "grunt-contrib-concat": "~0.3.0",
-    "grunt-contrib-copy": "~0.5.0",
-    "grunt-contrib-clean": "~0.4.0",
-    "grunt-contrib-jshint": "~0.8.0",
     "grunt-contrib-jasmine": "~0.6.1",
-    "grunt-jasmine-node": "git://github.com/vojtajina/grunt-jasmine-node.git#fix-grunt-exit-code",
-    "webdriverjs": "~1.3.1",
+    "grunt-contrib-jshint": "~0.8.0",
     "selenium-standalone": "~2.40.0",
-    "grunt-env": "~0.4.1",
     "temporary": "~0.0.8",
-    "grunt-continue": "~0.0.1"
+    "wd": "^0.2.13"
+  },
+  "peerDependencies": {
+    "freedom": "~0.4.0"
   },
   "peerDependencies": {
     "freedom": "~0.4.4"
