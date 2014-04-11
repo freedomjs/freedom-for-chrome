@@ -1,4 +1,6 @@
 var myId;
+window.messages = [];
+
 // This code finds how the relay was included on the page to learn what channel
 // to transmit on.
 window.addEventListener('load', function() {
@@ -28,9 +30,10 @@ var send = function() {
         }
       }
 
+      var specs = jsApiReporter.specs();
       var tosend = JSON.stringify({
         to: other,
-        msg: jsApiReporter.specs()
+        msg: specs
       });
       console.log(tosend);
       conn.send(tosend);
@@ -44,6 +47,7 @@ var report = function() {
     console.log('sending!');
     send();
     window.clearInterval(iv);
+    window.messages.push(jsApiReporter.specs());
   }
 };
 

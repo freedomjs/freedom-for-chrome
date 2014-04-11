@@ -115,8 +115,15 @@ module.exports = function (grunt) {
         ]
       }
     }).title().then(function(title) {
-      grunt.log.writeln('Done.');
-      ctx.driver.get('http://localhost:' + ctx.port).then(next);
+      if (title === 'SpecRunner') {
+        grunt.log.writeln('Done. [attaching to app allowed]');
+        ctx.direct = true;
+        next();
+      } else {
+        ctx.direct = false;
+        grunt.log.writeln('Done. [attaching to app disallowed]');
+        ctx.driver.get('http://localhost:' + ctx.port).then(next);
+      }
     });
   }
   
@@ -172,6 +179,7 @@ module.exports = function (grunt) {
   }
   
   function cleanup(ctx, next) {
+    var good = true;
     if (ctx.cleanupTimeout) {
       clearTimeout(ctx.cleanupTimeout);
     }
@@ -180,24 +188,24 @@ module.exports = function (grunt) {
     }
     if (!ctx.status) {
       grunt.log.error('Timed out');
+      good = false;
     } else if (ctx.status.failed === 0) {
       grunt.log.ok('0 failures');
     } else {
       grunt.log.error(ctx.status.failed + ' failures');
+      good = false;
     }
+    fs.removeSync(ctx.dir.path);
     if (ctx.keepBrowser) {
-      fs.removeSync(ctx.dir.path);
-      next();
-      return;
+      return next(good);
     }
-    ctx.driver.quit().then(function() {
-      if (ctx.dir) {
-        fs.removeSync(ctx.dir.path);
-      }
-      if (ctx.server) {
-        ctx.server.kill();
-      }
-      next();
-    });
+
+    ctx.driver.close().quit();
+    setTimeout(function() {
+      ctx.server && ctx.server.kill();
+    }, 500);
+    setTimeout(function() {
+      next(good);
+    }, 1000);
   }
 };
