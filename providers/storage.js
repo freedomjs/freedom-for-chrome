@@ -10,6 +10,18 @@ var Storage_chrome = function(channel, dispatch) {
   this.channel = channel;
 };
 
+Storage_chrome.prototype.keys = function(continuation) {
+  chrome.storage.local.get(null, function(data) {
+    var keys = [], item;
+    for (item in data) {
+      if (data.hasOwnProperty(item)) {
+        keys.push(item);
+      }
+    }
+    continuation(keys);
+  });
+};
+
 Storage_chrome.prototype.get = function(key, continuation) {
   try {
     // console.log('storage_chrome: looking up ' + key);

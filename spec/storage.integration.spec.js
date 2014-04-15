@@ -14,4 +14,16 @@ describe('Storage_chrome', function() {
       });
     });
   });
+
+  it('Implements the full Storage API', function(done) {
+    storage.set('myKey', 'val1',
+      storage.set.bind(storage, 'Key2', 'val2',
+        storage.keys.bind(storage, function(keys) {
+          expect(keys.length).toBe(2);
+          storage.clear(storage.keys.bind(storage, function(keys) {
+            expect(keys.length).toBe(0);
+            done();
+          }));
+        })));
+  });
 });
