@@ -1,11 +1,12 @@
 var FILES = require('freedom/Gruntfile.js').FILES;
+var prefix = 'node_modules/freedom/';
 
 for (var key in FILES) {
   FILES[key] = FILES[key].map(function(str) {
     if (str[0] === '!') {
-      return '!node_modules/freedom/' + str.substr(1);
+      return '!' + prefix + str.substr(1);
     } else {
-      return 'node_modules/freedom/' + str;
+      return prefix + str;
     }
   });
 }
@@ -19,18 +20,24 @@ module.exports = function(grunt) {
         '-W069': true
       }
     },
-    concat: {
-      dist: {
+    uglify: {
+      freedom: {
         options: {
-          process: function(src) {
-            return src.replace(/\/\*jslint/g,'/*');
-          }
+          sourceMap: true,
+          sourceMapName: 'freedom.map',
+          mangle: false,
+          beautify: true,
+          preserveComments: function(node, comment) {
+            return comment.value.indexOf('jslint') !== 0;
+          },
+          banner: require('fs').readFileSync(prefix + 'src/util/preamble.js', 'utf8'),
+          footer: require('fs').readFileSync(prefix + 'src/util/postamble.js', 'utf8')
         },
-        src: FILES.preamble
-            .concat(FILES.src)
-            .concat('providers/*.js')
-            .concat(FILES.postamble),
-        dest: 'freedom-for-chrome.js'
+        files: {
+          'freedom-for-chrome.js': FILES.lib
+              .concat(FILES.src)
+              .concat('providers/*.js')
+        }
       }
     },
     integration: {
@@ -53,7 +60,7 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-contrib-jshint');
 
@@ -61,14 +68,14 @@ module.exports = function(grunt) {
 
   grunt.registerTask('build', [
     'jshint:providers',
-    'concat'
+    'uglify'
   ]);
   grunt.registerTask('test', [
     'integration',
     'jasmine:unit'
   ]);
-  grunt.registerTask('default', ['build', 'test']);
   grunt.registerTask('unit', ['jasmine:unit']);
+  grunt.registerTask('default', ['build', 'unit']);
 };
 
 
