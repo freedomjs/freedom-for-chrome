@@ -25,6 +25,7 @@ module.exports = function(grunt) {
         options: {
           sourceMap: true,
           sourceMapName: 'freedom.map',
+          sourceMapIncludeSources: true,
           mangle: false,
           beautify: true,
           preserveComments: function(node, comment) {
