@@ -27,7 +27,8 @@
     "grunt-contrib-uglify": "^0.4.0",
     "selenium-standalone": "^2.41.0-2.9.0",
     "temporary": "~0.0.8",
-    "wd": "^0.2.19"
+    "wd": "^0.2.19",
+    "es6-promise": "^1.0.0"
   },
   "peerDependencies": {
     "freedom": "~0.4.6"

@@ -11,6 +11,13 @@ for (var key in FILES) {
   });
 }
 
+// Freedom npm dependency doesn't grab promise sub dependency.
+var promise_lib =   [
+  'node_modules/es6-promise/dist/promise-*.js',
+  '!node_modules/es6-promise/dist/promise-*amd.js',
+  '!node_modules/es6-promise/dist/promise-*min.js'
+]
+
 module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -36,6 +43,7 @@ module.exports = function(grunt) {
         },
         files: {
           'freedom-for-chrome.js': FILES.lib
+              .concat(promise_lib)
               .concat(FILES.src)
               .concat('providers/*.js')
         }
