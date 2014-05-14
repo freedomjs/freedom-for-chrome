@@ -21,7 +21,8 @@ module.exports = function(config) {
     frameworks: ['jasmine'],
 
     // list of files / patterns to load in the browser
-    files: FILES.srcCore
+    files: 
+      FILES.srcCore
       .concat(FILES.srcPlatform)
       .concat(FILES.srcJasmineHelper)
       .concat(FILES.specCoreUnit)

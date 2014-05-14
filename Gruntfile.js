@@ -23,6 +23,10 @@ module.exports = function(grunt) {
       single: {
       }
     },
+    connect: {default: {options: {
+      port: 8000,
+      keepalive: false
+    }}},
     jshint: {
       providers: ['providers/*.js'],
       options: {
@@ -73,6 +77,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-karma');
 
   grunt.loadTasks('tasks');
@@ -85,6 +90,13 @@ module.exports = function(grunt) {
     'integration',
     'jasmine:unit'
   ]);
+
+  grunt.registerTask('ray', [
+    'build',
+    'connect:default',
+    'karma:single'
+  ]);
+
   grunt.registerTask('unit', ['jasmine:unit']);
   grunt.registerTask('default', ['build', 'unit']);
 };
