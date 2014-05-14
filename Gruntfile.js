@@ -1,8 +1,9 @@
-var FILES = require('freedom/Gruntfile.js').FILES;
-var prefix = 'node_modules/freedom/';
+var FILES = {},
+    freedomPaths = require('freedom/Gruntfile.js').FILES;
+    prefix = 'node_modules/freedom/';
 
-for (var key in FILES) {
-  FILES[key] = FILES[key].map(function(str) {
+for (var key in freedomPaths) {
+  FILES[key] = freedomPaths[key].map(function(str) {
     if (str[0] === '!') {
       return '!' + prefix + str.substr(1);
     } else {
