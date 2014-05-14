@@ -10,6 +10,8 @@ for (var key in FILES) {
     }
   });
 }
+FILES.srcPlatform = ['providers/*.js'];
+FILES.specPlatformUnit = ['spec/*.unit.spec.js'];
 
 module.exports = function(grunt) {
   grunt.initConfig({
@@ -43,8 +45,8 @@ module.exports = function(grunt) {
         },
         files: {
           'freedom-for-chrome.js': FILES.lib
-              .concat(FILES.src)
-              .concat('providers/*.js')
+              .concat(FILES.srcCore)
+              .concat(FILES.srcPlatform)
         }
       }
     },
@@ -86,5 +88,4 @@ module.exports = function(grunt) {
   grunt.registerTask('unit', ['jasmine:unit']);
   grunt.registerTask('default', ['build', 'unit']);
 };
-
-
+module.exports.FILES = FILES;
