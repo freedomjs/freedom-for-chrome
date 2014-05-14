@@ -19,13 +19,16 @@ module.exports = function(grunt) {
     karma: {
       options: {
         configFile: 'karma.conf.js',
+        proxies: {'/': 'http://localhost:8000/'}
       },
       single: {
       }
     },
     connect: {default: {options: {
       port: 8000,
-      keepalive: false
+      keepalive: false,
+      base: 'node_modules/freedom/',
+      //debug: true
     }}},
     jshint: {
       providers: ['providers/*.js'],
