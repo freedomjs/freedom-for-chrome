@@ -11,7 +11,14 @@ for (var key in freedomPaths) {
     }
   });
 }
-FILES.srcPlatform = ['providers/*.js'];
+FILES.srcPlatform = [
+  'node_modules/freedom/providers/core/core.unprivileged.js', 
+  'node_modules/freedom/providers/core/echo.unprivileged.js', 
+  'node_modules/freedom/providers/core/peerconnection.unprivileged.js',
+  'node_modules/freedom/providers/core/websocket.unprivileged.js',
+  'node_modules/freedom/providers/core/view.unprivileged.js',
+  'providers/*.js'
+];
 FILES.specPlatformUnit = ['spec/*.unit.spec.js'];
 
 module.exports = function(grunt) {
