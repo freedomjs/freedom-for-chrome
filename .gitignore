@@ -2,6 +2,8 @@ freedom-for-chrome.js
 freedom.map
 build_spec/
 .grunt/
+.*.swp
+tools/coverage/
 
 npm-debug.log
 node_modules

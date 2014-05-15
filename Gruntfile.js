@@ -11,17 +11,26 @@ for (var key in freedomPaths) {
     }
   });
 }
-
-// Freedom npm dependency doesn't grab promise sub dependency.
-var promise_lib =   [
-  'node_modules/es6-promise/dist/promise-*.js',
-  '!node_modules/es6-promise/dist/promise-*amd.js',
-  '!node_modules/es6-promise/dist/promise-*min.js'
-]
+FILES.srcPlatform = ['providers/*.js'];
+FILES.specPlatformUnit = ['spec/*.unit.spec.js'];
 
 module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    karma: {
+      options: {
+        configFile: 'karma.conf.js',
+        proxies: {'/': 'http://localhost:8000/'}
+      },
+      single: {
+      }
+    },
+    connect: {default: {options: {
+      port: 8000,
+      keepalive: false,
+      base: 'node_modules/freedom/',
+      //debug: true
+    }}},
     jshint: {
       providers: ['providers/*.js'],
       options: {
@@ -44,9 +53,8 @@ module.exports = function(grunt) {
         },
         files: {
           'freedom-for-chrome.js': FILES.lib
-              .concat(promise_lib)
-              .concat(FILES.src)
-              .concat('providers/*.js')
+              .concat(FILES.srcCore)
+              .concat(FILES.srcPlatform)
         }
       }
     },
@@ -73,6 +81,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-contrib-connect');
+  grunt.loadNpmTasks('grunt-karma');
 
   grunt.loadTasks('tasks');
 
@@ -84,8 +94,14 @@ module.exports = function(grunt) {
     'integration',
     'jasmine:unit'
   ]);
+
+  grunt.registerTask('ray', [
+    'build',
+    'connect:default',
+    'karma:single'
+  ]);
+
   grunt.registerTask('unit', ['jasmine:unit']);
   grunt.registerTask('default', ['build', 'unit']);
 };
-
-
+module.exports.FILES = FILES;
