@@ -23,6 +23,8 @@ module.exports = function(grunt) {
         proxies: {'/': 'http://localhost:8000/'}
       },
       single: {
+        singleRun: false,
+        autoWatch: true
       }
     },
     connect: {default: {options: {

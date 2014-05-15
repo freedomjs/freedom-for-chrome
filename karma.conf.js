@@ -50,16 +50,17 @@ module.exports = function(config) {
       'karma-coverage',
       'karma-jasmine',
       'karma-chrome-launcher',
-      require('./tools/karma-chromeapp-launcher/')
+      'karma-phantomjs-launcher',
+      require('./tools/karma-cordova-launcher/')
     ],
     
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['ChromeApp'],
+    browsers: ['PhantomJS'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: false,
+    singleRun: true,
     
     // test results reporter to use
     // possible values: 'dots', 'progress'
