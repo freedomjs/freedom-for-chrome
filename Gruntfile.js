@@ -23,6 +23,7 @@ module.exports = function(grunt) {
         proxies: {'/': 'http://localhost:8000/'}
       },
       single: {
+        browsers: ['Chrome'],
         singleRun: false,
         autoWatch: true
       }
@@ -30,7 +31,7 @@ module.exports = function(grunt) {
     connect: {default: {options: {
       port: 8000,
       keepalive: false,
-      base: 'node_modules/freedom/',
+      base: ['./node_modules/freedom/','./'],
       //debug: true
     }}},
     jshint: {
