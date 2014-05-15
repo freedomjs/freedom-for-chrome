@@ -1,0 +1,9 @@
+build_spec/
+.grunt/
+.*.swp
+tools/coverage/
+
+npm-debug.log
+node_modules
+tools/freedomjs
+_SpecRunner.html
