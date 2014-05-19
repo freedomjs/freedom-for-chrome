@@ -1,3 +1,10 @@
+/**
+ * Gruntfile for freedom-for-chrome.js
+ *
+ * Here are the common tasks used
+ * 
+ **/
+
 var FILES = {},
     freedomPaths = require('freedom/Gruntfile.js').FILES;
     prefix = 'node_modules/freedom/';
@@ -27,13 +34,12 @@ module.exports = function(grunt) {
     karma: {
       options: {
         configFile: 'karma.conf.js',
+        //Need to run connect:default to host files
         proxies: {'/': 'http://localhost:8000/'}
       },
-      single: {
-        browsers: ['Chrome'],
-        singleRun: false,
-        autoWatch: true
-      }
+      single: { singleRun: true, autoWatch: false },
+      watch: { singleRun: false, autoWatch: true },
+      phantom: { browsers: ['PhantomJS'], singleRun: true, autoWatch: false }
     },
     connect: {default: {options: {
       port: 8000,
@@ -77,19 +83,10 @@ module.exports = function(grunt) {
           keepBrowser: false
         }
       }
-    },
-    jasmine: {
-      unit: {
-        src: ['providers/*.js'],
-        options: {
-          specs: ['spec/*.unit.spec.js']
-        }
-      }
     }
   });
 
   grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-karma');
@@ -98,20 +95,19 @@ module.exports = function(grunt) {
 
   grunt.registerTask('build', [
     'jshint:providers',
-    'uglify'
+    'uglify',
+    'connect:default'
   ]);
   grunt.registerTask('test', [
-    'integration',
-    'jasmine:unit'
-  ]);
-
-  grunt.registerTask('ray', [
     'build',
-    'connect:default',
-    'karma:single'
+    'karma:single',
+    'integration'
+  ]);
+  grunt.registerTask('debug', [
+    'build',
+    'karma:watch'
   ]);
 
-  grunt.registerTask('unit', ['jasmine:unit']);
-  grunt.registerTask('default', ['build', 'unit']);
+  grunt.registerTask('default', ['build', 'karma:phantom']);
 };
 module.exports.FILES = FILES;
