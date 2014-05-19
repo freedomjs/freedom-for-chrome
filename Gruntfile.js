@@ -18,6 +18,23 @@ for (var key in freedomPaths) {
     }
   });
 }
+FILES.lib = [
+  'node_modules/es6-promise/dist/promise-*.js',
+  '!node_modules/es6-promise/dist/promise-*amd.js',
+  '!node_modules/es6-promise/dist/promise-*min.js',
+  'node_modules/freedom/src/util/jshinthelper.js'
+];
+FILES.srcJasmineHelper = [
+  'node_modules/es6-promise/dist/promise-*.js',
+  '!node_modules/es6-promise/dist/promise-*amd.js',
+  '!node_modules/es6-promise/dist/promise-*min.js',
+  'node_modules/es5-shim/es5-shim.js',
+  'node_modules/freedom/spec/util.js'
+];
+FILES.karmaExclude = [
+  'node_modules/es6-promise/dist/promise-*amd.js',
+  'node_modules/es6-promise/dist/promise-*min.js'
+];
 FILES.srcPlatform = [
   'node_modules/freedom/providers/core/core.unprivileged.js', 
   'node_modules/freedom/providers/core/echo.unprivileged.js', 
