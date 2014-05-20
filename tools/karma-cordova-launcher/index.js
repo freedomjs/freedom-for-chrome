@@ -1,58 +1,67 @@
 var fs = require('fs');
+var exec = require('child_process').exec;
+var ncp = require('ncp').ncp;
+ncp.limit = 16;
+var BIN = 'node_modules/cordova/bin/cordova';
 
-var ChromeApp = function(baseBrowserDecorator, args) {
-  baseBrowserDecorator(this);
-
-  var flags = args.flags || [];
-
-  this._getOptions = function(url) {
-    // Chrome CLI options
-    // http://peter.sh/experiments/chromium-command-line-switches/
-    return [
-      '--user-data-dir=' + this._tempDir,
-      '--no-default-browser-check',
-      '--no-first-run',
-      '--disable-default-apps',
-      '--disable-popup-blocking',
-      '--start-maximized'
-    ].concat(flags, [url]);
-  };
-};
-
-// Return location of chrome.exe file for a given Chrome directory (available: "Chrome", "Chrome SxS").
-function getChromeExe(chromeDirName) {
-  if (process.platform !== 'win32') {
-    return null;
-  }
-  var windowsChromeDirectory, i, prefix;
-  var suffix = '\\Google\\'+ chromeDirName + '\\Application\\chrome.exe';
-  var prefixes = [process.env.LOCALAPPDATA, process.env.PROGRAMFILES, process.env['PROGRAMFILES(X86)']];
-
-  for (i = 0; i < prefixes.length; i++) {
-    prefix = prefixes[i];
-    if (fs.existsSync(prefix + suffix)) {
-      windowsChromeDirectory = prefix + suffix;
-      break;
+function runCordovaCmd(args, errback) {
+  var child = exec(BIN + " " + args, function(error, stdout, stderr) {
+    console.log('stdout:' + stdout);
+    console.log('stderr:' + stderr);
+    if (error !== null) {
+      errback(error);
     }
-  }
+  });
 
-  return windowsChromeDirectory;
 }
 
-ChromeApp.prototype = {
-  name: 'ChromeApp',
+var Cordova = function(id, emitter, args, logger, config) {
+  var self = this;
+  self.settings = config.cordovaSettings;
+  self.log = logger.create('launcher.cordova');
+  self.name = self.platform + " on Cordova";
 
-  DEFAULT_CMD: {
-    linux: 'google-chrome',
-    darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    win32: getChromeExe('Chrome')
-  },
-  ENV_CMD: 'CHROME_BIN'
+  console.log(self.settings);
+
+  var errorHandler = function(err) {
+    self.log.error(err);
+    emitter.emit('browser_process_failure', self);
+  };
+
+  this.start = function(url) {
+    self.log.debug("Starting at " + url);
+    ncp('./tools/karma-cordova-launcher/template/','/tmp/cordova_test',function(err) {
+      if (err) {
+        self.log.error(err);
+        emitter.emit('browser_process_failure', self);
+        return;
+      }
+      
+      var platforms = self.settings.platforms;
+      for (var i=0; i<platforms.length; i++) {
+        runCordovaCmd('platform add ' + platforms[i], errorHandler);
+      }
+      var plugins = self.settings.plugins;
+      for (var i=0; i<plugins.length; i++) {
+        runCordovaCmd('plugin add ' + plugins[i], errorHandler);
+      }
+    
+    });
+    
+  };
+
+  this.kill = function(done) {
+    self.log.debug("Killing");
+    done();
+  };
+  
+  this.toString = function() {
+    return self.name;
+  };
+
 };
-
-ChromeApp.$inject = ['baseBrowserDecorator', 'args'];
 
 // PUBLISH DI MODULE
 module.exports = {
-  'launcher:ChromeApp': ['type', ChromeApp]
+  'launcher:Cordova': ['type', Cordova]
 };

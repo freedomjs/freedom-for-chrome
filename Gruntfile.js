@@ -43,7 +43,14 @@ FILES.srcPlatform = [
   'node_modules/freedom/providers/core/view.unprivileged.js',
   'providers/*.js'
 ];
-FILES.specPlatformUnit = ['spec/*.unit.spec.js'];
+FILES.specPlatformUnit = [
+  'node_modules/freedom/spec/providers/core/core.spec.js',
+  'node_modules/freedom/spec/providers/core/echo.spec.js',
+  'node_modules/freedom/spec/providers/core/peerconnection.spec.js',
+  'node_modules/freedom/spec/providers/core/websocket.spec.js',
+  'node_modules/freedom/spec/providers/core/view.unit.spec.js',
+  'spec/*.unit.spec.js'
+];
 
 module.exports = function(grunt) {
   grunt.initConfig({
@@ -56,7 +63,21 @@ module.exports = function(grunt) {
       },
       single: { singleRun: true, autoWatch: false },
       watch: { singleRun: false, autoWatch: true },
-      phantom: { browsers: ['PhantomJS'], singleRun: true, autoWatch: false }
+      phantom: { browsers: ['PhantomJS'], singleRun: true, autoWatch: false },
+      cordova: {
+        browsers: ['Cordova'],
+        singleRun: true, autoWatch: false,
+        cordovaSettings: {
+          platforms: ['android'],//, 'ios'],
+          plugins: [
+            'org.chromium.common',
+            'org.chromium.socket',
+            'org.chromium.storage',
+            'org.chromium.polyfill.xhr_features',
+            'org.apache.cordova.console',
+          ]
+        }
+      }
     },
     connect: {default: {options: {
       port: 8000,
@@ -123,6 +144,10 @@ module.exports = function(grunt) {
   grunt.registerTask('debug', [
     'build',
     'karma:watch'
+  ]);
+  grunt.registerTask('ray', [
+    'build',
+    'karma:cordova'
   ]);
 
   grunt.registerTask('default', ['build', 'karma:phantom']);
