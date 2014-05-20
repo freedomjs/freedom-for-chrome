@@ -145,7 +145,7 @@ module.exports = function(grunt) {
     'build',
     'karma:watch'
   ]);
-  grunt.registerTask('ray', [
+  grunt.registerTask('cordova', [
     'build',
     'karma:cordova'
   ]);
