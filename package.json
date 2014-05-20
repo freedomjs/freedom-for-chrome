@@ -36,8 +36,8 @@
     "karma-phantomjs-launcher": "~0.1.4",
     "es6-promise": "^1.0.0",
     "es5-shim": "^3.3.2",
-    "cordova": "^3.4.1-0.1.0",
-    "ncp": "^0.5.1"
+    "ncp": "^0.5.1",
+    "child-process-promise": "^0.2.0-SNAPSHOT.1389671754086"
   },
   "peerDependencies": {
     "freedom": "~0.4.9"

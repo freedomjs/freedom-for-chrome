@@ -1,18 +1,22 @@
 var fs = require('fs');
-var exec = require('child_process').exec;
+var spawn = require('child-process-promise').spawn;
 var ncp = require('ncp').ncp;
 ncp.limit = 16;
-var BIN = 'node_modules/cordova/bin/cordova';
+var BIN = 'cordova';
+var CORDOVA_DIR = '/tmp/cordova_test';
+var TEMPLATE_DIR = __dirname + '/' + 'template/';
 
-function runCordovaCmd(args, errback) {
-  var child = exec(BIN + " " + args, function(error, stdout, stderr) {
-    console.log('stdout:' + stdout);
-    console.log('stderr:' + stderr);
-    if (error !== null) {
-      errback(error);
-    }
+function runCordovaCmd(args) {
+  return spawn(BIN, args, {
+    cwd: CORDOVA_DIR
+  }).progress(function(childProcess) {
+    childProcess.stdout.on('data', function(data) {
+      console.log('[spawn] stdout: ' + data.toString());
+    });
+    childProcess.stderr.on('data', function(data) {
+      console.error('[spawn] stderr: ' + data.toString());
+    });
   });
-
 }
 
 var Cordova = function(id, emitter, args, logger, config) {
@@ -30,7 +34,7 @@ var Cordova = function(id, emitter, args, logger, config) {
 
   this.start = function(url) {
     self.log.debug("Starting at " + url);
-    ncp('./tools/karma-cordova-launcher/template/','/tmp/cordova_test',function(err) {
+    ncp(TEMPLATE_DIR, CORDOVA_DIR, function(err) {
       if (err) {
         self.log.error(err);
         emitter.emit('browser_process_failure', self);
@@ -38,16 +42,29 @@ var Cordova = function(id, emitter, args, logger, config) {
       }
       
       var platforms = self.settings.platforms;
-      for (var i=0; i<platforms.length; i++) {
-        runCordovaCmd('platform add ' + platforms[i], errorHandler);
-      }
       var plugins = self.settings.plugins;
-      for (var i=0; i<plugins.length; i++) {
-        runCordovaCmd('plugin add ' + plugins[i], errorHandler);
+      var promise = runCordovaCmd(['plugin', 'add'].concat(plugins)).fail(errorHandler);
+      
+      for (var i=0; i<platforms.length; i++) {
+        promise = promise.then(
+          runCordovaCmd.bind({}, ['platform', 'add', platforms[i]]),
+          runCordovaCmd.bind({}, ['platform', 'add', platforms[i]])
+        );
       }
-    
+      promise = promise.then(function(result) {
+        console.log('Done adding platforms');
+      }, function(err) {
+        console.log('Done adding platforms');
+      });
+      
+      promise = promise.then(runCordovaCmd.bind({}, ['build']), errorHandler);
+      promise.then(function() {
+        for (var i=0; i<platforms.length; i++) {
+          runCordovaCmd(['emulate', platforms[i]], errorHandler); 
+        }
+      }, errorHandler);
+      
     });
-    
   };
 
   this.kill = function(done) {
