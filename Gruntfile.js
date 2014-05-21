@@ -18,6 +18,7 @@ for (var key in freedomPaths) {
     }
   });
 }
+
 FILES.lib = [
   'node_modules/es6-promise/dist/promise-*.js',
   '!node_modules/es6-promise/dist/promise-*amd.js',
@@ -51,6 +52,9 @@ FILES.specPlatformUnit = [
   'node_modules/freedom/spec/providers/core/view.unit.spec.js',
   'spec/*.unit.spec.js'
 ];
+FILES.specPlatformIntegration = [
+  'spec/*.integration.spec.js'
+];
 
 module.exports = function(grunt) {
   grunt.initConfig({
@@ -67,6 +71,7 @@ module.exports = function(grunt) {
       cordova: {
         browsers: ['Cordova'],
         singleRun: true, autoWatch: false,
+        //exclude: FILES.karmaExclude,
         cordovaSettings: {
           platforms: ['android'],//, 'ios'],
           plugins: [
@@ -152,4 +157,5 @@ module.exports = function(grunt) {
 
   grunt.registerTask('default', ['build', 'karma:phantom']);
 };
+
 module.exports.FILES = FILES;

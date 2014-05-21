@@ -21,16 +21,17 @@ module.exports = function(config) {
     frameworks: ['jasmine'],
 
     // list of files / patterns to load in the browser
-    files: 
-      FILES.srcCore
-      .concat(FILES.srcPlatform)
-      .concat(FILES.srcJasmineHelper)
-      .concat(FILES.specCoreUnit)
-      .concat(FILES.specPlatformUnit)
-      .filter(bangFilter),
+    files: FILES.srcCore.concat(
+      FILES.srcPlatform,
+      FILES.srcJasmineHelper,
+      FILES.specCoreUnit,
+      FILES.specPlatformUnit,
+      FILES.specPlatformIntegration
+    ).filter(bangFilter),
 
     // list of files to exclude
-    exclude: FILES.karmaExclude,
+    //exclude: FILES.karmaExclude,
+    exclude: FILES.karmaExclude.concat(FILES.specPlatformIntegration),
     
     // web server port
     port: 9876,
