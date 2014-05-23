@@ -1,7 +1,7 @@
 {
   "name": "freedom-for-chrome",
   "description": "Embracing a distributed web",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "homepage": "http://freedomjs.org",
   "bugs": {
     "url": "http://github.com/freedomjs/freedom-for-chrome/issues",
@@ -18,7 +18,7 @@
   "devDependencies": {
     "async": "~0.2.10",
     "chalk": "^0.4.0",
-    "freedom": "^0.4.9",
+    "freedom": "^0.4.10",
     "fs-extra": "^0.8.1",
     "glob": "^3.2.9",
     "grunt": "~0.4.2",
@@ -39,7 +39,7 @@
     "karma-cordova-launcher": "0.0.6"
   },
   "peerDependencies": {
-    "freedom": "~0.4.9"
+    "freedom": "~0.4.10"
   },
   "scripts": {}
 }

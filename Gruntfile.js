@@ -6,7 +6,7 @@
  **/
 
 var FILES = {},
-    freedomPaths = require('freedom/Gruntfile.js').FILES;
+    freedomPaths = require('freedom/Gruntfile.js').FILES,
     prefix = 'node_modules/freedom/';
 
 for (var key in freedomPaths) {
