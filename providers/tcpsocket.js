@@ -96,7 +96,8 @@ Socket_chrome.ERROR_MAP = {
   '-103': 'CONNECTION_ABORTED',
   '-104': 'CONNECTION_FAILED',
   '-105': 'NAME_NOT_RESOLVED',
-  '-106': 'INTERNET_DISCONNECTED'
+  '-106': 'INTERNET_DISCONNECTED',
+  '-1000': 'GENERIC_CORDOVA_FAILURE'  //See Cordova Plugin socket.js
 };
 
 /*
@@ -183,10 +184,15 @@ Socket_chrome.prototype.accept = function(callback, result) {
   var acceptCallback;
 
   if (result !== 0) {
+    var errorMsg;
+    if (Socket_chrome.ERROR_MAP.hasOwnProperty(result)) {
+      errorMsg = "Chrome Listen failed: " + Socket_chrome.ERROR_MAP[result];
+    } else {
+      errorMsg = "Chrome Listen failed: Unknown code " + result;
+    }
     callback(undefined, {
       errcode: "CONNECTION_FAILURE",
-      message: "Chrome Listen failed: " +
-          Socket_chrome.ERROR_MAP[result]
+      message: errorMsg
     });
     return;
   } else {
