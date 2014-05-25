@@ -175,7 +175,7 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
   }
   chrome.socket.create('tcp', {}, function(createInfo) {
     this.id = createInfo.socketId;
-    chrome.socket.listen(this.id, address, port, null,
+    chrome.socket.listen(this.id, address, port, 20,
         this.accept.bind(this, callback));
   }.bind(this));
 };
