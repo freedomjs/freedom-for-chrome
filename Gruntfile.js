@@ -2,7 +2,7 @@
  * Gruntfile for freedom-for-chrome.js
  *
  * Here are the common tasks used
- * 
+ *
  **/
 
 var FILES = {},
@@ -37,8 +37,8 @@ FILES.karmaExclude = [
   'node_modules/es6-promise/dist/promise-*min.js'
 ];
 FILES.srcPlatform = [
-  'node_modules/freedom/providers/core/core.unprivileged.js', 
-  'node_modules/freedom/providers/core/echo.unprivileged.js', 
+  'node_modules/freedom/providers/core/core.unprivileged.js',
+  'node_modules/freedom/providers/core/echo.unprivileged.js',
   'node_modules/freedom/providers/core/peerconnection.unprivileged.js',
   'node_modules/freedom/providers/core/websocket.unprivileged.js',
   'node_modules/freedom/providers/core/view.unprivileged.js',
@@ -100,6 +100,8 @@ module.exports = function(grunt) {
       freedom: {
         options: {
           sourceMap: true,
+          // sourceMapName must be the same as that defined in the final comment
+          // of the `freedom/src/util/postamble.js`
           sourceMapName: 'freedom.map',
           sourceMapIncludeSources: true,
           mangle: false,
