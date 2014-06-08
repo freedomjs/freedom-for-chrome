@@ -105,6 +105,7 @@ module.exports = function(grunt) {
           sourceMapName: 'freedom.map',
           sourceMapIncludeSources: true,
           mangle: false,
+          // compress: false, wrap: false, // uncomment to get a clean out file.
           beautify: true,
           preserveComments: function(node, comment) {
             return comment.value.indexOf('jslint') !== 0;

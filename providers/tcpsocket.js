@@ -58,7 +58,7 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
       } else {
         cb();
       }
-      this.read();
+      this.startReadLoop_();
     }.bind(this));
   }.bind(this));
 };
