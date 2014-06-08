@@ -12,7 +12,7 @@ var Socket_chrome = function(channel, dispatchEvent, id) {
   this.dispatchEvent = dispatchEvent;
   this.id = id || undefined;
   if (this.id) {
-    this.read();
+    this.startReadLoop_();
   }
 };
 
@@ -99,32 +99,59 @@ Socket_chrome.ERROR_MAP = {
   '-1000': 'GENERIC_CORDOVA_FAILURE'  //See Cordova Plugin socket.js
 };
 
+Socket_chrome.errorStringOfCode_ = function(code) {
+  return Socket_chrome.ERROR_MAP[String(code)] ||
+      "UNKOWN ERROR: " + code;
+};
+
 /*
  * Read data on a socket in an event loop until the socket is closed or an
  * error occurs.
  * @method read
  * @private
  */
-Socket_chrome.prototype.read = function() {
-  var loop;
-  loop = function() {
-    return this.doRead()
-    .then(this.checkReadResult.bind(this))
-    .then(function(data) {
-      this.dispatchEvent('onData', {
-        data: data
-      });
-    }.bind(this))
-    .then(loop);
-  }.bind(this);
-  
-  loop().then(null, function(err) {
-    console.warn('Read Error [' + this.id + ']: ' + err.message);
+Socket_chrome.prototype.dispatchDisconnect_ = function (code) {
+  if (code === 0) {
     this.dispatchEvent('onDisconnect', {
-      errcode: "READ_ERROR",
-      message: err.message
+      errcode: 'NONE',
+      message: 'CLOSED1'
     });
-  }.bind(this));
+  } else if(readInfo.resultCode === -100) {
+    this.dispatchEvent('onDisconnect', {
+      errcode: 'NONE',
+      message: 'CLOSED2'
+    });
+  } else if(readInfo.resultCode < 0) {
+    this.dispatchEvent('onDisconnect', {
+      errcode: Socket_chrome.errorStringOfCode_(readInfo.resultCode),
+      message: 'unexpected socket error'
+    });
+  }
+  return Promise.Reject();
+};
+
+Socket_chrome.prototype.handleReadData_ = function (readInfo) {
+  if(readInfo.resultCode <= 0) {
+    reading = false;
+    this.dispatchDisconnect_(readInfo.resultCode);
+    return;
+  }
+  this.dispatchEvent('onData', {data: readInfo.data});
+};
+
+/*
+ * Read data on a socket in an event loop until the socket is closed or an
+ * error occurs.
+ * @method read
+ * @private
+ */
+Socket_chrome.prototype.startReadLoop_ = function() {
+  var loop = function() {
+    return this.makeSocketReadPromise_()
+      .then(this.handleReadData_.bind(this))
+      .then(loop);
+  };
+  loop();
 };
 
 /**
@@ -132,29 +159,10 @@ Socket_chrome.prototype.read = function() {
  * @method doRead
  * @private
  */
-Socket_chrome.prototype.doRead = function() {
+Socket_chrome.prototype.makeSocketReadPromise_ = function() {
   return new Promise(function(resolve) {
     chrome.socket.read(this.id, null, resolve);
   }.bind(this));
-};
-
-/**
- * Check the result code of a read - if non-positive, reject
- * the promise, otherwise pass along.
- * @method checkReadResult
- * @private
- * @param {ChromeReadInfo} readInfo The result of a chrome.socket.read call
- */
-Socket_chrome.prototype.checkReadResult = function(readInfo) {
-  var code = readInfo.resultCode;
-  if (code === 0) {
-    return Promise.reject(new Error('remotely closed.'));
-  } else if (code < 0) {
-    return Promise.reject(new Error(Socket_chrome.ERROR_MAP[String(code)] ||
-        code));
-  } else {
-    return Promise.resolve(readInfo.data);
-  }
 };
 
 /**
