@@ -9,7 +9,6 @@
  * @param {number?} id A pre-existing socket Id for the socket.
  */
 var Socket_chrome = function(channel, dispatchEvent, id) {
-  console.warn(id);
   this.dispatchEvent = dispatchEvent;
   this.id = id || undefined;
   if (this.id) {
