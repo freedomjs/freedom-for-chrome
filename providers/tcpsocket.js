@@ -150,7 +150,7 @@ Socket_chrome.prototype.startReadLoop_ = function() {
     return this.makeSocketReadPromise_()
       .then(this.handleReadData_.bind(this))
       .then(loop);
-  };
+  }.bind(this);
   loop();
 };
 
