@@ -180,10 +180,9 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
 };
 
 Socket_chrome.prototype.accept = function(callback, result) {
-  var acceptCallback;
+  var acceptCallback, errorMsg;
 
   if (result !== 0) {
-    var errorMsg;
     if (Socket_chrome.ERROR_MAP.hasOwnProperty(result)) {
       errorMsg = "Chrome Listen failed: " + Socket_chrome.ERROR_MAP[result];
     } else {
