@@ -14,24 +14,26 @@ var FILES = {
   ],
   platformIntegration: [
     'spec/*.integration.spec.js'
-  ],
+  ]
 };
 
-var addPrefix = function(file) {
+var fileInfo = require('freedom'),
+  freedomPrefix = require.resolve('freedom').substr(0,
+      require.resolve('freedom').lastIndexOf('freedom') + 8);
+
+var addPrefix = function (file) {
   if (file.indexOf('!') !== 0 && file.indexOf('/') !== 0) {
     return freedomPrefix + file;
   }
   return file;
 };
 
-var fileInfo = require('freedom'),
-    freedomPrefix = require.resolve('freedom').substr(0,
-        require.resolve('freedom').lastIndexOf('freedom') + 8),
-    freedomSrc = [].concat(
-      fileInfo.FILES.lib,
-      fileInfo.FILES.srcCore,
-      fileInfo.FILES.srcPlatform
-    ).map(addPrefix);
+
+var freedomSrc = [].concat(
+  fileInfo.FILES.lib,
+  fileInfo.FILES.srcCore,
+  fileInfo.FILES.srcPlatform
+).map(addPrefix);
 
 FILES.karma = fileInfo.unGlob([].concat(
   fileInfo.FILES.srcCore,
