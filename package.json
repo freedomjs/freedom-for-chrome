@@ -18,7 +18,7 @@
   "devDependencies": {
     "async": "^0.9.0",
     "chalk": "^0.4.0",
-    "freedom": "0.5.0-rc1",
+    "freedom": "0.5.0-rc2",
     "fs-extra": "^0.9.1",
     "glob": "^4.0.2",
     "grunt": "^0.4.5",
@@ -39,7 +39,7 @@
     "karma-cordova-launcher": "0.0.6"
   },
   "peerDependencies": {
-    "freedom": "0.5.0-rc1"
+    "freedom": "0.5.0-rc2"
   },
   "scripts": {}
 }
