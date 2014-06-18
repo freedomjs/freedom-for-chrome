@@ -114,12 +114,12 @@ Socket_chrome.prototype.dispatchDisconnect_ = function (code) {
   if (code === 0) {
     this.dispatchEvent('onDisconnect', {
       errcode: 'NONE',
-      message: 'CLOSED1'
+      message: 'CLOSED_BY_US'
     });
   } else if(readInfo.resultCode === -100) {
     this.dispatchEvent('onDisconnect', {
       errcode: 'NONE',
-      message: 'CLOSED2'
+      message: 'CLOSED_BY_REMOTE'
     });
   } else if(readInfo.resultCode < 0) {
     this.dispatchEvent('onDisconnect', {
@@ -127,7 +127,6 @@ Socket_chrome.prototype.dispatchDisconnect_ = function (code) {
       message: 'unexpected socket error'
     });
   }
-  return Promise.Reject();
 };
 
 Socket_chrome.prototype.handleReadData_ = function (readInfo) {
@@ -185,13 +184,21 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
     // See https://developer.chrome.com/apps/socket#method-listen
     chrome.socket.listen(this.id, address, port,
         100,  // Length of the sockets listen queue.
-        this.accept.bind(this, callback));
+        this.startAcceptLoop_.bind(this));
   }.bind(this));
 };
 
-Socket_chrome.prototype.accept = function(callback, result) {
-  var acceptCallback;
-
+/**
+ * Result is a value passed in by to this function when this function is given
+ * as the callback to |chrome.socket.listen|.
+ * @method acceptLoop_
+ * @param {Function} callback that resolve's Freedom's promise for this.listen
+ * to complete.
+ * @param {number} result is a number that represent a chrome socket error, as
+ * specified in:
+ * https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
+ */
+Socket_chrome.prototype.startAcceptLoop_ = function(callback, result) {
   if (result !== 0) {
     var errorMsg;
     if (Socket_chrome.ERROR_MAP.hasOwnProperty(result)) {
@@ -204,32 +211,40 @@ Socket_chrome.prototype.accept = function(callback, result) {
       message: errorMsg
     });
     return;
-  } else {
-    callback();
   }
 
-  // Begin accepting on the listening socket.
-  acceptCallback = function(acceptInfo) {
-    if (acceptInfo.resultCode === 0) {
-      chrome.socket.getInfo(acceptInfo.socketId, function(info) {
-        this.dispatchEvent('onConnection', {
-          socket: acceptInfo.socketId,
-          host: info.peerAddress,
-          port: info.peerPort
-        });
-      }.bind(this));
-      chrome.socket.accept(this.id, acceptCallback);
-    // -15 is socket_not_connected.
-    } else if (acceptInfo.resultCode !== -15) {
-      console.warn('Failed to accept ' + this.id + ': ' +
-          acceptInfo.resultCode);
-    } else {
-      chrome.socket.accept(this.id, acceptCallback);
-    }
-  }.bind(this);
-
-  chrome.socket.accept(this.id, acceptCallback);
+  callback();
+  chrome.socket.accept(this.id, this.acceptLoop_.bind(this));
 };
+
+/**
+ * Callback of a call to |chrome.socket.accept|.
+ * @method acceptCallback_
+ * @param {Object} acceptInfo has socketId as parameter that is a number
+ * representing an internal socket id.
+ */
+Socket_chrome.prototype.acceptLoop_ = function(acceptInfo) {
+  // If this socket has not been closed, keep accepting more socket connections.
+  if (this.id) {
+    chrome.socket.accept(this.id, this.acceptLoop_.bind(this));
+  }
+
+  // handle errors as warnings.
+  if (acceptInfo.resultCode !== 0) {
+    console.warn('Failed to accept ' + this.id + ': ' +
+        acceptInfo.resultCode);
+    return;
+  }
+
+  // Dispatch the appropriate event to the parent module.
+  chrome.socket.getInfo(acceptInfo.socketId, function(info) {
+    this.dispatchEvent('onConnection', {
+      socket: acceptInfo.socketId,
+      host: info.peerAddress,
+      port: info.peerPort
+    });
+  }.bind(this));
+}
 
 /**
  * Close and Destroy a socket
