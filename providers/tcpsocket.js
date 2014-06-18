@@ -182,7 +182,9 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
   }
   chrome.socket.create('tcp', {}, function(createInfo) {
     this.id = createInfo.socketId;
-    chrome.socket.listen(this.id, address, port, 20,
+    // See https://developer.chrome.com/apps/socket#method-listen
+    chrome.socket.listen(this.id, address, port,
+        100,  // Length of the sockets listen queue.
         this.accept.bind(this, callback));
   }.bind(this));
 };
