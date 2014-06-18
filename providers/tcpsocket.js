@@ -184,7 +184,7 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
     // See https://developer.chrome.com/apps/socket#method-listen
     chrome.socket.listen(this.id, address, port,
         100,  // Length of the sockets listen queue.
-        this.startAcceptLoop_.bind(this));
+        this.startAcceptLoop_.bind(this, callback));
   }.bind(this));
 };
 
@@ -198,7 +198,8 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
  * specified in:
  * https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
  */
-Socket_chrome.prototype.startAcceptLoop_ = function(callback, result) {
+Socket_chrome.prototype.startAcceptLoop_ =
+    function(callbackFromListen, result) {
   if (result !== 0) {
     var errorMsg;
     if (Socket_chrome.ERROR_MAP.hasOwnProperty(result)) {
@@ -206,14 +207,14 @@ Socket_chrome.prototype.startAcceptLoop_ = function(callback, result) {
     } else {
       errorMsg = "Chrome Listen failed: Unknown code " + result;
     }
-    callback(undefined, {
+    callbackFromListen(undefined, {
       errcode: "CONNECTION_FAILURE",
       message: errorMsg
     });
     return;
   }
 
-  callback();
+  callbackFromListen();
   chrome.socket.accept(this.id, this.acceptLoop_.bind(this));
 };
 
@@ -244,7 +245,7 @@ Socket_chrome.prototype.acceptLoop_ = function(acceptInfo) {
       port: info.peerPort
     });
   }.bind(this));
-}
+};
 
 /**
  * Close and Destroy a socket
