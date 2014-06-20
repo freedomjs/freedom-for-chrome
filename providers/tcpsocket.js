@@ -12,7 +12,7 @@ var Socket_chrome = function(channel, dispatchEvent, id) {
   this.dispatchEvent = dispatchEvent;
   this.id = id || undefined;
   if (this.id) {
-    this.read();
+    this.startReadLoop_();
   }
 };
 
@@ -58,7 +58,7 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
       } else {
         cb();
       }
-      this.read();
+      this.startReadLoop_();
     }.bind(this));
   }.bind(this));
 };
@@ -99,32 +99,58 @@ Socket_chrome.ERROR_MAP = {
   '-1000': 'GENERIC_CORDOVA_FAILURE'  //See Cordova Plugin socket.js
 };
 
+Socket_chrome.errorStringOfCode_ = function(code) {
+  return Socket_chrome.ERROR_MAP[String(code)] ||
+      "UNKOWN ERROR: " + code;
+};
+
 /*
  * Read data on a socket in an event loop until the socket is closed or an
  * error occurs.
  * @method read
  * @private
  */
-Socket_chrome.prototype.read = function() {
-  var loop;
-  loop = function() {
-    return this.doRead()
-    .then(this.checkReadResult.bind(this))
-    .then(function(data) {
-      this.dispatchEvent('onData', {
-        data: data
-      });
-    }.bind(this))
-    .then(loop);
-  }.bind(this);
-  
-  loop().then(null, function(err) {
-    console.warn('Read Error [' + this.id + ']: ' + err.message);
+Socket_chrome.prototype.dispatchDisconnect_ = function (code) {
+  if (code === 0) {
     this.dispatchEvent('onDisconnect', {
-      errcode: "READ_ERROR",
-      message: err.message
+      errcode: 'NONE',
+      message: 'CLOSED_BY_US'
     });
-  }.bind(this));
+  } else if(readInfo.resultCode === -100) {
+    this.dispatchEvent('onDisconnect', {
+      errcode: 'NONE',
+      message: 'CLOSED_BY_REMOTE'
+    });
+  } else if(readInfo.resultCode < 0) {
+    this.dispatchEvent('onDisconnect', {
+      errcode: Socket_chrome.errorStringOfCode_(readInfo.resultCode),
+      message: 'unexpected socket error'
+    });
+  }
+};
+
+Socket_chrome.prototype.handleReadData_ = function (readInfo) {
+  if(readInfo.resultCode <= 0) {
+    reading = false;
+    this.dispatchDisconnect_(readInfo.resultCode);
+    return;
+  }
+  this.dispatchEvent('onData', {data: readInfo.data});
+};
+
+/*
+ * Read data on a socket in an event loop until the socket is closed or an
+ * error occurs.
+ * @method read
+ * @private
+ */
+Socket_chrome.prototype.startReadLoop_ = function() {
+  var loop = function() {
+    return this.makeSocketReadPromise_()
+      .then(this.handleReadData_.bind(this))
+      .then(loop);
+  }.bind(this);
+  loop();
 };
 
 /**
@@ -132,29 +158,10 @@ Socket_chrome.prototype.read = function() {
  * @method doRead
  * @private
  */
-Socket_chrome.prototype.doRead = function() {
+Socket_chrome.prototype.makeSocketReadPromise_ = function() {
   return new Promise(function(resolve) {
     chrome.socket.read(this.id, null, resolve);
   }.bind(this));
-};
-
-/**
- * Check the result code of a read - if non-positive, reject
- * the promise, otherwise pass along.
- * @method checkReadResult
- * @private
- * @param {ChromeReadInfo} readInfo The result of a chrome.socket.read call
- */
-Socket_chrome.prototype.checkReadResult = function(readInfo) {
-  var code = readInfo.resultCode;
-  if (code === 0) {
-    return Promise.reject(new Error('remotely closed.'));
-  } else if (code < 0) {
-    return Promise.reject(new Error(Socket_chrome.ERROR_MAP[String(code)] ||
-        code));
-  } else {
-    return Promise.resolve(readInfo.data);
-  }
 };
 
 /**
@@ -174,14 +181,25 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
   }
   chrome.socket.create('tcp', {}, function(createInfo) {
     this.id = createInfo.socketId;
-    chrome.socket.listen(this.id, address, port, 20,
-        this.accept.bind(this, callback));
+    // See https://developer.chrome.com/apps/socket#method-listen
+    chrome.socket.listen(this.id, address, port,
+        100,  // Length of the sockets listen queue.
+        this.startAcceptLoop_.bind(this, callback));
   }.bind(this));
 };
 
-Socket_chrome.prototype.accept = function(callback, result) {
-  var acceptCallback;
-
+/**
+ * Result is a value passed in by to this function when this function is given
+ * as the callback to |chrome.socket.listen|.
+ * @method acceptLoop_
+ * @param {Function} callback that resolve's Freedom's promise for this.listen
+ * to complete.
+ * @param {number} result is a number that represent a chrome socket error, as
+ * specified in:
+ * https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
+ */
+Socket_chrome.prototype.startAcceptLoop_ =
+    function(callbackFromListen, result) {
   if (result !== 0) {
     var errorMsg;
     if (Socket_chrome.ERROR_MAP.hasOwnProperty(result)) {
@@ -189,36 +207,44 @@ Socket_chrome.prototype.accept = function(callback, result) {
     } else {
       errorMsg = "Chrome Listen failed: Unknown code " + result;
     }
-    callback(undefined, {
+    callbackFromListen(undefined, {
       errcode: "CONNECTION_FAILURE",
       message: errorMsg
     });
     return;
-  } else {
-    callback();
   }
 
-  // Begin accepting on the listening socket.
-  acceptCallback = function(acceptInfo) {
-    if (acceptInfo.resultCode === 0) {
-      chrome.socket.getInfo(acceptInfo.socketId, function(info) {
-        this.dispatchEvent('onConnection', {
-          socket: acceptInfo.socketId,
-          host: info.peerAddress,
-          port: info.peerPort
-        });
-      }.bind(this));
-      chrome.socket.accept(this.id, acceptCallback);
-    // -15 is socket_not_connected.
-    } else if (acceptInfo.resultCode !== -15) {
-      console.warn('Failed to accept ' + this.id + ': ' +
-          acceptInfo.resultCode);
-    } else {
-      chrome.socket.accept(this.id, acceptCallback);
-    }
-  }.bind(this);
+  callbackFromListen();
+  chrome.socket.accept(this.id, this.acceptLoop_.bind(this));
+};
 
-  chrome.socket.accept(this.id, acceptCallback);
+/**
+ * Callback of a call to |chrome.socket.accept|.
+ * @method acceptCallback_
+ * @param {Object} acceptInfo has socketId as parameter that is a number
+ * representing an internal socket id.
+ */
+Socket_chrome.prototype.acceptLoop_ = function(acceptInfo) {
+  // If this socket has not been closed, keep accepting more socket connections.
+  if (this.id) {
+    chrome.socket.accept(this.id, this.acceptLoop_.bind(this));
+  }
+
+  // handle errors as warnings.
+  if (acceptInfo.resultCode !== 0) {
+    console.warn('Failed to accept ' + this.id + ': ' +
+        acceptInfo.resultCode);
+    return;
+  }
+
+  // Dispatch the appropriate event to the parent module.
+  chrome.socket.getInfo(acceptInfo.socketId, function(info) {
+    this.dispatchEvent('onConnection', {
+      socket: acceptInfo.socketId,
+      host: info.peerAddress,
+      port: info.peerPort
+    });
+  }.bind(this));
 };
 
 /**
