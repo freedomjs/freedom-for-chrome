@@ -101,7 +101,7 @@ Socket_chrome.ERROR_MAP = {
 
 Socket_chrome.errorStringOfCode_ = function(code) {
   return Socket_chrome.ERROR_MAP[String(code)] ||
-      "UNKOWN ERROR: " + code;
+      'UNKNOWN';
 };
 
 /*
@@ -114,17 +114,17 @@ Socket_chrome.prototype.dispatchDisconnect_ = function (code) {
   if (code === 0) {
     this.dispatchEvent('onDisconnect', {
       errcode: 'NONE',
-      message: 'CLOSED_BY_US'
+      message: 'closed by us'
     });
   } else if(readInfo.resultCode === -100) {
     this.dispatchEvent('onDisconnect', {
       errcode: 'NONE',
-      message: 'CLOSED_BY_REMOTE'
+      message: 'closed by remote'
     });
-  } else if(readInfo.resultCode < 0) {
+  } else {
     this.dispatchEvent('onDisconnect', {
       errcode: Socket_chrome.errorStringOfCode_(readInfo.resultCode),
-      message: 'unexpected socket error'
+      message: 'unexpected socket error: ' + readInfo.resultCode
     });
   }
 };
@@ -183,19 +183,24 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
     this.id = createInfo.socketId;
     // See https://developer.chrome.com/apps/socket#method-listen
     chrome.socket.listen(this.id, address, port,
-        100,  // Length of the sockets listen queue.
+        // TODO: find out what the default is, and what this really means, the
+        // webpage is pretty sparse on it:
+        //   https://developer.chrome.com/apps/socket#method-listen
+        //
+        // Length of the socket's listen queue (number of pending connections
+        // to open)
+        100,
         this.startAcceptLoop_.bind(this, callback));
   }.bind(this));
 };
 
 /**
- * Result is a value passed in by to this function when this function is given
- * as the callback to |chrome.socket.listen|.
- * @method acceptLoop_
- * @param {Function} callback that resolve's Freedom's promise for this.listen
- * to complete.
- * @param {number} result is a number that represent a chrome socket error, as
- * specified in:
+ * @method startAcceptLoop_
+ * @param {Function} callbackFromListen Resolves Freedom's promise for
+ * |this.listen|
+ * @param {number} result The argument |result| comes from the callback in
+ * |chrome.socket.listen|. Its value is a number that represents a chrome socket
+ * error, as specified in:
  * https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
  */
 Socket_chrome.prototype.startAcceptLoop_ =
@@ -220,7 +225,7 @@ Socket_chrome.prototype.startAcceptLoop_ =
 
 /**
  * Callback of a call to |chrome.socket.accept|.
- * @method acceptCallback_
+ * @method acceptLoop_
  * @param {Object} acceptInfo has socketId as parameter that is a number
  * representing an internal socket id.
  */
