@@ -196,7 +196,7 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
 
 /**
  * @method startAcceptLoop_
- * @param {Function} callbackFromListen Resolve's Freedom's promise for
+ * @param {Function} callbackFromListen Resolves Freedom's promise for
  * |this.listen|
  * @param {number} result The argument |result| comes from the callback in
  * |chrome.socket.listen|. Its value is a number that represents a chrome socket
