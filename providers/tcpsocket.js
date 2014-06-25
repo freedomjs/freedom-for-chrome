@@ -124,7 +124,7 @@ Socket_chrome.prototype.dispatchDisconnect_ = function (code) {
   } else {
     this.dispatchEvent('onDisconnect', {
       errcode: Socket_chrome.errorStringOfCode_(readInfo.resultCode),
-      message: 'unexpected socket error: ' + readInfo.resultCode;
+      message: 'unexpected socket error: ' + readInfo.resultCode
     });
   }
 };
