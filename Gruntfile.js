@@ -2,7 +2,7 @@
  * Gruntfile for freedom-for-chrome.js
  *
  * Here are the common tasks used
- * 
+ *
  **/
 
 var FILES = {
@@ -101,9 +101,12 @@ module.exports = function(grunt) {
       freedom: {
         options: {
           sourceMap: true,
+          // sourceMapName must be the same as that defined in the final comment
+          // of the `freedom/src/util/postamble.js`
           sourceMapName: 'freedom.map',
           sourceMapIncludeSources: true,
           mangle: false,
+          // compress: false, wrap: false, // uncomment to get a clean out file.
           beautify: true,
           preserveComments: function(node, comment) {
             return comment.value.indexOf('jslint') !== 0;
