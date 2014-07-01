@@ -19,6 +19,7 @@ var Socket_chrome = function(channel, dispatchEvent, id) {
 /**
  * Get Information about the socket.
  * @method getInfo
+ * @param {Function} continuation Function to call with information.
  * @return {Object} connection and address information about the socket.
  */
 Socket_chrome.prototype.getInfo = function(continuation) {
@@ -63,10 +64,16 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
   }.bind(this));
 };
 
+/**
+ * Write data to the socket.
+ * @method write
+ * @param {ArrayBuffer} data The data to write
+ * @param {Function} cb Function to call when data is written
+ */
 Socket_chrome.prototype.write = function(data, cb) {
   if (!this.id) {
     cb(undefined, {
-      "errcode": "SOCKET_CLOSED",
+      "errcode": "NOT_CONNECTED",
       "message": "Cannot Write on Closed Socket"
     });
     return;
@@ -117,30 +124,38 @@ Socket_chrome.errorStringOfCode = function(code) {
  * error message.
  * @method dispatchDisconnect
  * @private
- * @param {Nuber} code the code returned by chrome when the socket closed.
+ * @param {Number} code the code returned by chrome when the socket closed.
  */
 Socket_chrome.prototype.dispatchDisconnect = function (code) {
   if (code === 0) {
     this.dispatchEvent('onDisconnect', {
-      errcode: 'NONE',
-      message: 'closed by us'
+      errcode: 'SUCCESS',
+      message: 'Socket closed by call to close'
     });
   } else if(code === -100) {
     this.dispatchEvent('onDisconnect', {
-      errcode: 'NONE',
-      message: 'closed by remote'
+      errcode: 'CONNECTION_CLOSED',
+      message: 'Connection closed gracefully'
     });
   } else {
     this.dispatchEvent('onDisconnect', {
       errcode: Socket_chrome.errorStringOfCode(code),
-      message: 'unexpected socket error: ' + code
+      message: 'Socket Error: ' + code
     });
   }
 };
 
+/**
+ * React to read data.
+ * @method handleReadData
+ * @private
+ * @param {ReadInfo} readInfo The value returned by chrome.socket.read.
+ */
 Socket_chrome.prototype.handleReadData = function (readInfo) {
   if(readInfo.resultCode <= 0) {
     this.dispatchDisconnect(readInfo.resultCode);
+
+    // Short circuit the read loop.
     throw new Error("Disconnected");
   }
   this.dispatchEvent('onData', {data: readInfo.data});
@@ -163,8 +178,9 @@ Socket_chrome.prototype.startReadLoop = function() {
 
 /**
  * Return a promise based on a chrome.read call.
- * @method doRead
+ * @method makeSocketReadPromise
  * @private
+ * @returns {Promise} a Promise wrapping chrome.socket.read.
  */
 Socket_chrome.prototype.makeSocketReadPromise = function() {
   return new Promise(function(resolve) {
@@ -235,7 +251,7 @@ Socket_chrome.prototype.startAcceptLoop =
 
 /**
  * Callback of a call to |chrome.socket.accept|.
- * @method acceptLoop_
+ * @method acceptLoop
  * @param {Object} acceptInfo has socketId as parameter that is a number
  * representing an internal socket id.
  * @private
