@@ -69,7 +69,8 @@ module.exports = function(grunt) {
       },
       cordova: {
         browsers: ['Cordova'],
-        singleRun: true, autoWatch: false,
+        singleRun: true,
+        autoWatch: false,
         cordovaSettings: {
           platforms: ['android'],//, 'ios'],
           plugins: [
@@ -87,7 +88,7 @@ module.exports = function(grunt) {
         options: {
           port: 8000,
           keepalive: false,
-          base: [freedomPrefix,'./']
+          base: [freedomPrefix, './']
         }
       }
     },
