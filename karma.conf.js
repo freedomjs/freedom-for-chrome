@@ -2,14 +2,6 @@
 // Generated on Fri May 09 2014 12:32:28 GMT-0700 (PDT)
 var FILES = require('./Gruntfile').FILES
 
-function bangFilter(elt) {
-  if (elt.length > 0) { //Filter strings that start with '!'
-    return elt.charAt(0) !== '!';
-  } else { //Filter empty strings
-    return false;
-  }
-}
-
 module.exports = function(config) {
   config.set({
 
@@ -21,17 +13,10 @@ module.exports = function(config) {
     frameworks: ['jasmine'],
 
     // list of files / patterns to load in the browser
-    files: FILES.srcCore.concat(
-      FILES.srcPlatform,
-      FILES.srcJasmineHelper,
-      FILES.specCoreUnit,
-      FILES.specPlatformUnit,
-      FILES.specPlatformIntegration
-    ).filter(bangFilter),
+    files: FILES.karma.include,
 
     // list of files to exclude
-    //exclude: FILES.karmaExclude,
-    exclude: FILES.karmaExclude.concat(FILES.specPlatformIntegration),
+    exclude: FILES.karma.exclude,
     
     // web server port
     port: 9876,
@@ -48,7 +33,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome', 'PhantomJS'],
+    browsers: ['Chrome'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
@@ -61,7 +46,7 @@ module.exports = function(config) {
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    preprocessors: FILES.srcCore.concat(FILES.srcPlatform).reduce(function(prev, curr, i, arr) {
+    preprocessors: FILES.karmaCoverage.reduce(function(prev, curr, i, arr) {
       prev[curr] = 'coverage';
       return prev;
     }, {}),

@@ -42,14 +42,26 @@ module.exports = function (grunt) {
     ], done);
   });
   
+  function getFiles(specs) {
+    var out = [];
+    if (specs instanceof Array) {
+      specs.forEach(function(spec) {
+        out = out.concat(glob.sync(spec));
+      });
+    } else {
+      out = glob.sync(specs);
+    }
+    return out;
+  }
+  
   function buildSpec(ctx, next) {
     grunt.log.write('Building...');
     ctx.dir = new temp.Dir();
     var dest = ctx.dir.path + '/app';
 
-    var scripts = glob.sync(ctx.spec);
+    var scripts = getFiles(ctx.spec);
     if (ctx.helper) {
-      scripts = scripts.concat(glob.sync(ctx.helper));
+      scripts = scripts.concat(getFiles(ctx.helper));
     }
     var tags = "";
     
