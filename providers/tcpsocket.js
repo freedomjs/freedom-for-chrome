@@ -72,7 +72,17 @@ Socket_chrome.prototype.write = function(data, cb) {
     });
     return;
   }
-  chrome.socket.write(this.id, data, cb);
+
+  chrome.socket.write(this.id, data, function(writeInfo) {
+    if (writeInfo.bytesWritten !== data.byteLength) {
+      console.error('Write partially failed. TODO: retry');
+      return cb(undefined, {
+        "errcode": "CONNECTION_RESET",
+        "message": "Write Partially completed."
+      });
+    }
+    cb();
+  });
 };
 
 
