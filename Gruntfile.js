@@ -147,8 +147,7 @@ module.exports = function(grunt) {
   grunt.registerTask('test', [
     'build',
     'karma:single',
-    'integration',
-    'karma:cordova'
+    'integration'
   ]);
   grunt.registerTask('debug', [
     'build',

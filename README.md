@@ -34,7 +34,9 @@ Running `grunt` will run the standard set of freedom.js unit tests against the g
 freedom-for-chrome.js file, ensuring that the bundle is parseable, and can be loaded
 by phantom.js.
 
-Running `grunt integration` will run selenium tests in a chrome packaged application.
+Before submitting a pull request, please also run `grunt test` and `grunt cordova`
+
+`grunt integration` will run Selenium tests in a Chrome packaged application.
 Depending on your architecture, this may not report results back to the console, and
 visual inspection of the test results in the packaged application may be needed.
 These tests exercise the functionality of the chrome specific providers in this repository.
@@ -43,6 +45,11 @@ To test functionality of changes it is recommended to add tests of the `spec/*.i
 and to run an appropriate chrome application example to verify that the change functions appropriately.
 For UDP / TCP changes, https://github.com/freedomjs/freedom-social-xmpp has a demonstration exercising
 many of the needed APIs.
+
+`grunt cordova` will run the tests in an iframe in a WebView on Android.
+Note that this has only been tested on cordova 3.5.0 on Ubuntu 14.04LTS using 
+a Nexus 4 device emulator running Android L.
+The device must be configured to have an SD card and "Use Host GPU".
 
 Reporting Issues
 ----------------
