@@ -77,8 +77,8 @@ module.exports = function(grunt) {
             'org.chromium.common',
             'org.chromium.socket',
             'org.chromium.storage',
-            'org.chromium.polyfill.xhr_features',
             'org.apache.cordova.console',
+            //'org.chromium.polyfill.xhr_features',
           ]
         }
       }
