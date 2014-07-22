@@ -31,7 +31,8 @@
    * If we have a local domain, and freedom.js is loaded at startup, we can use
    * the local page as a redirect URI.
    */
-  if (typeof chrome !== 'undefined') {
+  if (typeof chrome !== 'undefined' &&
+      typeof chrome.permissions !== 'undefined') { //cca doesn't support chrome.permissions yet
     chrome.permissions.getAll(function (permissions) {
       // Require webRequest permissions.
       if (permissions.permissions.indexOf('webRequest') < 0) {
