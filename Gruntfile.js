@@ -41,6 +41,7 @@ FILES.karma = fileInfo.unGlob([].concat(
   fileInfo.FILES.srcJasmineHelper,
   fileInfo.FILES.specCoreUnit,
   fileInfo.FILES.specPlatformUnit,
+  fileInfo.FILES.srcProviderIntegration,
   fileInfo.FILES.specProviderIntegration
 ).map(addPrefix));
 
