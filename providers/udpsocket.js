@@ -12,6 +12,13 @@ var UdpSocket_chrome = function(channel, dispatchEvent) {
   this.id = undefined;
 };
 
+/**
+ * A static list of active sockets, so that global on-receive messages
+ * from chrome can be routed properly.
+ * @static
+ * @private
+ */
+UdpSocket_chrome.active = {};
 
 /**
  * Bind the UDP Socket to a specific host and port.
@@ -22,12 +29,12 @@ var UdpSocket_chrome = function(channel, dispatchEvent) {
  * @param {Function} continuation A function to call after binding.
  */
 UdpSocket_chrome.prototype.bind = function(address, port, continuation) {
-  chrome.socket.create('udp', {}, function(createResult) {
+  chrome.sockets.udp.create({}, function(createResult) {
     this.id = createResult.socketId;
-    chrome.socket.bind(this.id, address, port, function(bindResult) {
+    chrome.sockets.udp.bind(this.id, address, port, function(bindResult) {
       if (bindResult >= 0) {
         continuation(bindResult);
-        this.read();
+        UdpSocket_chrome.addActive(this.id, this);
       } else {
         continuation(undefined, {
           errcode: "BIND_FAILED",
@@ -45,7 +52,7 @@ UdpSocket_chrome.prototype.bind = function(address, port, continuation) {
  */
 UdpSocket_chrome.prototype.getInfo = function(continuation) {
   if (this.id) {
-    chrome.socket.getInfo(this.id, continuation);
+    chrome.sockets.udp.getInfo(this.id, continuation);
   } else {
     continuation({
       connected: false
@@ -53,27 +60,51 @@ UdpSocket_chrome.prototype.getInfo = function(continuation) {
   }
 };
 
+UdpSocket_chrome.addActive = function(id, socket) {
+  if (Object.keys(UdpSocket_chrome.active).length === 0) {
+    chrome.sockets.udp.onReceive.addListener(UdpSocket_chrome.handleReadData);
+    chrome.sockets.udp.onReceiveError.addListener(
+        UdpSocket_chrome.handleReadError);
+  }
+  UdpSocket_chrome.active[id] = socket;
+};
+
+UdpSocket_chrome.removeActive = function(id) {
+  delete UdpSocket_chrome.active[id];
+  if (Object.keys(UdpSocket_chrome.active).length === 0) {
+    chrome.sockets.udp.onReceive.removeListener(
+        UdpSocket_chrome.handleReadData);
+    chrome.sockets.udp.onReceiveError.removeListener(
+        UdpSocket_chrome.handleReadError);
+  }
+};
+
+
 /**
- * Read from the socket until an error occurs.
- * @method read
+ * Handle data received on a socket
+ * @method handleReadData
+ * @static
  * @private
  */
-UdpSocket_chrome.prototype.read = function() {
-  chrome.socket.recvFrom(this.id, null, function(recvFromInfo) {
-    if (recvFromInfo.resultCode < 0) {
-      console.warn('Failed to read from ' + this.id + ': ' +
-          recvFromInfo.resultCode);
-      return;
-    }
+UdpSocket_chrome.handleReadData = function(info) {
+  UdpSocket_chrome[info.socketId].dispatchEvent('onData', {
+    resultCode:0,
+    address: info.remoteAddress,
+    port: info.remotePort,
+    data: info.data
+  });
+};
 
-    this.dispatchEvent('onData', {
-      resultCode: recvFromInfo.resultCode,
-      address: recvFromInfo.address,
-      port: recvFromInfo.port,
-      data: recvFromInfo.data
-    });
-    this.read();
-  }.bind(this));
+/**
+ * Handle errors received on a socket
+ * @method handleReadError
+ * @static
+ * @private
+ */
+UdpSocket_chrome.handleReadError = function(info) {
+  UdpSocket_chrome[info.socketId].dispatchEvent('onData', {
+    resultCode:info.resultCode
+  });
 };
 
 /**
@@ -93,8 +124,8 @@ UdpSocket_chrome.prototype.sendTo = function(data, address, port, cb) {
     return;
   }
 
-  chrome.socket.sendTo(this.id, data, address, port, function(writeInfo) {
-    cb(writeInfo.bytesWritten);
+  chrome.sockets.udp.send(this.id, data, address, port, function(writeInfo) {
+    cb(writeInfo.bytesSent);
   });
 };
 
@@ -105,7 +136,7 @@ UdpSocket_chrome.prototype.sendTo = function(data, address, port, cb) {
  */
 UdpSocket_chrome.prototype.destroy = function(continuation) {
   if (this.id && this.id !== 'INVALID') {
-    chrome.socket.destroy(this.id);
+    chrome.sockets.udp.close(this.id);
     this.id = 'INVALID';
     continuation();
   } else {
