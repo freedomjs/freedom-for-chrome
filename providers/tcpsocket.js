@@ -34,6 +34,8 @@ Socket_chrome.active = {};
  */
 Socket_chrome.prototype.getInfo = function(continuation) {
   if (this.id) {
+    // Note: this.namespace used, since this method is common to tcp and
+    // tcpServer sockets.
     chrome.sockets[this.namespace].getInfo(this.id, continuation);
   } else {
     continuation({
@@ -228,7 +230,7 @@ Socket_chrome.handleAccept = function (acceptInfo) {
       host: info.peerAddress,
       port: info.peerPort
     });
-  });
+  });t
 };
 
 /**
@@ -312,6 +314,8 @@ Socket_chrome.prototype.startAcceptLoop =
 Socket_chrome.prototype.close = function(continuation) {
   if (this.id) {
     this.removeActive(this.id);
+    // Note: this.namespace used, since this method is common to tcp and
+    // tcpServer sockets.
     chrome.sockets[this.namespace].disconnect(this.id, function() {});
     delete this.id;
     continuation();
