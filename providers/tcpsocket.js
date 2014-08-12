@@ -172,10 +172,14 @@ Socket_chrome.addActive = function(id, socket) {
   if (Object.keys(Socket_chrome.active).length === 0) {
     if (chrome.sockets.tcp) {
       chrome.sockets.tcp.onReceive.addListener(Socket_chrome.handleReadData);
-      chrome.sockets.tcp.onReceiveError.addListener(Socket_chrome.handleReadError);
+      chrome.sockets.tcp.onReceiveError.addListener(
+          Socket_chrome.handleReadError);
     }
     if (chrome.sockets.tcpServer) {
-      chrome.sockets.tcpServer.onAccept.addListener(Socket_chrome.handleAccept);
+      chrome.sockets.tcpServer.onAccept.addListener(
+          Socket_chrome.handleAccept);
+      chrome.sockets.tcpServer.onAcceptError.addListener(
+          Socket_chrome.handleAcceptError);
     }
   }
   Socket_chrome.active[id] = socket;
@@ -185,11 +189,16 @@ Socket_chrome.removeActive = function(id) {
   delete Socket_chrome.active[id];
   if (Object.keys(Socket_chrome.active).length === 0) {
     if (chrome.sockets.tcp) {
-      chrome.sockets.tcp.onReceive.removeListener(Socket_chrome.handleReadData);
-      chrome.sockets.tcp.onReceiveError.removeListener(Socket_chrome.handleReadError);
+      chrome.sockets.tcp.onReceive.removeListener(
+          Socket_chrome.handleReadData);
+      chrome.sockets.tcp.onReceiveError.removeListener(
+          Socket_chrome.handleReadError);
     }
     if (chrome.sockets.tcpServer) {
-      chrome.sockets.tcpServer.onAccept.removeListener(Socket_chrome.handleAccept);
+      chrome.sockets.tcpServer.onAccept.removeListener(
+          Socket_chrome.handleAccept);
+      chrome.sockets.tcpServer.onAcceptError.removeListener(
+          Socket_chrome.handleAcceptError);
     }
   }
 };

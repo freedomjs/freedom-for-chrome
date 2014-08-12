@@ -20,6 +20,10 @@
 		},
 		"tcpServer": {
 			"listen": ["*"]
+		},
+		"udp": {
+			"bind": ["*"],
+			"send": ["*"]
 		}
 	}
 }
