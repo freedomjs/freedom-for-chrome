@@ -313,7 +313,7 @@ Socket_chrome.prototype.startAcceptLoop =
  */
 Socket_chrome.prototype.close = function(continuation) {
   if (this.id) {
-    this.removeActive(this.id);
+    Socket_chrome.removeActive(this.id);
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
     chrome.sockets[this.namespace].disconnect(this.id, function() {});

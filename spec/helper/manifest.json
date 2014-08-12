@@ -13,5 +13,13 @@
 	"permissions": [
 		{"socket":["tcp-connect","udp-send-to","udp-bind"]},
         "storage"
-	]
+	],
+	"sockets":{
+		"tcp": {
+			"connect": ["*"]
+		},
+		"tcpServer": {
+			"listen": ["*"]
+		}
+	}
 }
