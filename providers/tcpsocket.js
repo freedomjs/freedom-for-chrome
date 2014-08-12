@@ -13,8 +13,10 @@ var Socket_chrome = function(channel, dispatchEvent, id) {
   this.id = id || undefined;
   this.namespace = 'tcp';
   if (this.id) {
-    Socket_chrome.setActive(this.id, this);
-    chrome.sockets.tcp.setPaused(this.id, false);
+    Socket_chrome.addActive(this.id, this);
+    chrome.sockets.tcp.setPaused(this.id, false, function() {
+      console.log('Unpaused receiver');
+    });
   }
 };
 
@@ -92,15 +94,23 @@ Socket_chrome.prototype.write = function(data, cb) {
   }
 
   chrome.sockets.tcp.send(this.id, data, function(sendInfo) {
-    if (sendInfo.bytesSent !== data.byteLength) {
-      console.error('Write partially failed. TODO: retry');
+    if (sendInfo.resultCode < 0) {
+      Socket_chrome.removeActive(this.id);
+      return cb(undefined, {
+        "errcode": Socket_chrome.errorStringOfCode(sendInfo.resultCode),
+        "message": "Send Error: " + sendInfo.resultCode
+      });
+    } else if (sendInfo.bytesSent !== data.byteLength) {
+      Socket_chrome.removeActive(this.id);
+      console.error('Write partially failed. [' + sendInfo.bytesSent + ' vs ' +
+                    data.byteLength +'] TODO: retry');
       return cb(undefined, {
         "errcode": "CONNECTION_RESET",
         "message": "Write Partially completed."
       });
     }
     cb();
-  });
+  }.bind(this));
 };
 
 
@@ -211,6 +221,9 @@ Socket_chrome.removeActive = function(id) {
  * @static
  */
 Socket_chrome.handleReadData = function (readInfo) {
+  if (!Socket_chrome.active[readInfo.socketId]) {
+    console.warn('Dropped Read: ', readInfo);
+  }
   Socket_chrome.active[readInfo.socketId].dispatchEvent('onData', {data: readInfo.data});
 };
 
@@ -222,6 +235,7 @@ Socket_chrome.handleReadData = function (readInfo) {
  * @static
  */
 Socket_chrome.handleReadError = function (readInfo) {
+  Socket_chrome.removeActive(readInfo.socketId);
   Socket_chrome.active[readInfo.socketId].dispatchDisconnect(readInfo.resultCode);
 };
 
@@ -235,7 +249,7 @@ Socket_chrome.handleReadError = function (readInfo) {
 Socket_chrome.handleAccept = function (acceptInfo) {
   chrome.sockets.tcp.getInfo(acceptInfo.clientSocketId, function(info) {
     Socket_chrome.active[acceptInfo.socketId].dispatchEvent('onConnection', {
-      socket: acceptInfo.cientSocketId,
+      socket: acceptInfo.clientSocketId,
       host: info.peerAddress,
       port: info.peerPort
     });
@@ -250,6 +264,7 @@ Socket_chrome.handleAccept = function (acceptInfo) {
  * @static
  */
 Socket_chrome.handleAcceptError = function (info) {
+  Socket_chrome.removeActive(info.socketId);
   Socket_chrome.active[info.socketId].dispatchDisconnect(info.resultCode);
 };
 
