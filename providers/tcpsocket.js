@@ -11,7 +11,7 @@
 var Socket_chrome = function(channel, dispatchEvent, id) {
   this.dispatchEvent = dispatchEvent;
   this.id = id || undefined;
-  this.namespace = 'tcp';
+  this.namespace = chrome.sockets.tcp;
   if (this.id) {
     Socket_chrome.addActive(this.id, this);
     chrome.sockets.tcp.setPaused(this.id, false, function() {
@@ -25,6 +25,7 @@ var Socket_chrome = function(channel, dispatchEvent, id) {
  * from chrome can be routed properly.
  * @static
  * @private
+ * @type {Object.<number,Socket_chrome>}
  */
 Socket_chrome.active = {};
 
@@ -38,7 +39,7 @@ Socket_chrome.prototype.getInfo = function(continuation) {
   if (this.id) {
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
-    chrome.sockets[this.namespace].getInfo(this.id, continuation);
+    this.namespace.getInfo(this.id, continuation);
   } else {
     continuation({
       connected: false
@@ -102,8 +103,6 @@ Socket_chrome.prototype.write = function(data, cb) {
       });
     } else if (sendInfo.bytesSent !== data.byteLength) {
       Socket_chrome.removeActive(this.id);
-      console.error('Write partially failed. [' + sendInfo.bytesSent + ' vs ' +
-                    data.byteLength +'] TODO: retry');
       return cb(undefined, {
         "errcode": "CONNECTION_RESET",
         "message": "Write Partially completed."
@@ -177,7 +176,15 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
   }
 };
 
-
+/**
+ * Mark a socket as active, so that dispatched events can be routed to it.
+ * This method is needed because chrome.sockets exposes a single event handler
+ * for incoming data across all sockets.
+ * @method addActive
+ * @static
+ * @param {number} id The socketId as provided by chrome.sockets
+ * @param {Socket_chrome} socket The socket class associated with the id.
+ */
 Socket_chrome.addActive = function(id, socket) {
   if (Object.keys(Socket_chrome.active).length === 0) {
     if (chrome.sockets.tcp) {
@@ -195,6 +202,12 @@ Socket_chrome.addActive = function(id, socket) {
   Socket_chrome.active[id] = socket;
 };
 
+/**
+ * Unmark a socket as active, and clean up event handlers if needed.
+ * @method removeActive
+ * @static
+ * @param {number} id The socketId to no longer watch.
+ */
 Socket_chrome.removeActive = function(id) {
   delete Socket_chrome.active[id];
   if (Object.keys(Socket_chrome.active).length === 0) {
@@ -223,6 +236,7 @@ Socket_chrome.removeActive = function(id) {
 Socket_chrome.handleReadData = function (readInfo) {
   if (!Socket_chrome.active[readInfo.socketId]) {
     console.warn('Dropped Read: ', readInfo);
+    return;
   }
   Socket_chrome.active[readInfo.socketId].dispatchEvent('onData', {data: readInfo.data});
 };
@@ -235,6 +249,10 @@ Socket_chrome.handleReadData = function (readInfo) {
  * @static
  */
 Socket_chrome.handleReadError = function (readInfo) {
+  if (!Socket_chrome.active[readInfo.socketId]) {
+    console.warn('Dropped Read Error: ', readInfo);
+    return;
+  }
   Socket_chrome.removeActive(readInfo.socketId);
   Socket_chrome.active[readInfo.socketId].dispatchDisconnect(readInfo.resultCode);
 };
@@ -247,6 +265,11 @@ Socket_chrome.handleReadError = function (readInfo) {
  * @static
  */
 Socket_chrome.handleAccept = function (acceptInfo) {
+  if (!Socket_chrome.active[acceptInfo.socketId]) {
+    console.warn('Dropped Accept: ', acceptInfo);
+    return;
+  }
+
   chrome.sockets.tcp.getInfo(acceptInfo.clientSocketId, function(info) {
     Socket_chrome.active[acceptInfo.socketId].dispatchEvent('onConnection', {
       socket: acceptInfo.clientSocketId,
@@ -264,6 +287,11 @@ Socket_chrome.handleAccept = function (acceptInfo) {
  * @static
  */
 Socket_chrome.handleAcceptError = function (info) {
+  if (!Socket_chrome.active[info.socketId]) {
+    console.warn('Dropped Accept Error: ', info);
+    return;
+  }
+
   Socket_chrome.removeActive(info.socketId);
   Socket_chrome.active[info.socketId].dispatchDisconnect(info.resultCode);
 };
@@ -283,7 +311,7 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
     });
     return;
   }
-  this.namespace = 'tcpServer';
+  this.namespace = chrome.sockets.tcpServer;
   chrome.sockets.tcpServer.create({}, function(createInfo) {
     this.id = createInfo.socketId;
     // See https://developer.chrome.com/apps/socket#method-listen
@@ -340,7 +368,7 @@ Socket_chrome.prototype.close = function(continuation) {
     Socket_chrome.removeActive(this.id);
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
-    chrome.sockets[this.namespace].disconnect(this.id, function() {});
+    this.namespace.disconnect(this.id, function() {});
     delete this.id;
     continuation();
   } else {
