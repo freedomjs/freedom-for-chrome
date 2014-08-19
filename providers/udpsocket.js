@@ -87,7 +87,7 @@ UdpSocket_chrome.removeActive = function(id) {
  * @private
  */
 UdpSocket_chrome.handleReadData = function(info) {
-  UdpSocket_chrome[info.socketId].dispatchEvent('onData', {
+  UdpSocket_chrome.active[info.socketId].dispatchEvent('onData', {
     resultCode:0,
     address: info.remoteAddress,
     port: info.remotePort,
@@ -102,7 +102,7 @@ UdpSocket_chrome.handleReadData = function(info) {
  * @private
  */
 UdpSocket_chrome.handleReadError = function(info) {
-  UdpSocket_chrome[info.socketId].dispatchEvent('onData', {
+  UdpSocket_chrome.active[info.socketId].dispatchEvent('onData', {
     resultCode:info.resultCode
   });
 };
