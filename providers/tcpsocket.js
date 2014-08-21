@@ -111,9 +111,13 @@ Socket_chrome.prototype.secure = function(cb) {
           return;
         }
         cb();
-      }.bind(this));
+      }.bind(this), function(e) {
+        console.error('Error unpausing socket: ', e);
+      });
     }.bind(this));
-  }.bind(this));
+  }.bind(this), function(e) {
+    console.error('Error pausing socket: ', e);
+  });
 };
 
 /**
@@ -126,8 +130,8 @@ Socket_chrome.prototype.pause = function() {
   if (!this.id) {
     return Promise.reject('Cannot pause disconnected socket');
   }
-  return new Promise(function(F, R) {
-    chrome.sockets.tcp.setPaused(this.id, true, F);
+  return new Promise(function(fulfill, reject) {
+    chrome.sockets.tcp.setPaused(this.id, true, fulfill);
   }.bind(this));
 };
 
@@ -141,8 +145,8 @@ Socket_chrome.prototype.unpause = function() {
   if (!this.id) {
     return Promise.reject('Cannot unpause disconnected socket');
   }
-  return new Promise(function(F, R) {
-    chrome.sockets.tcp.setPaused(this.id, false, F);
+  return new Promise(function(fulfill, reject) {
+    chrome.sockets.tcp.setPaused(this.id, false, fulfill);
   }.bind(this));
 };
 
