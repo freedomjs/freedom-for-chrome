@@ -80,6 +80,83 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
 };
 
 /**
+ * Secure an already connected socket.
+ * @method secure
+ * @param {Function} cb Function to call with completion or error.
+ */
+Socket_chrome.prototype.secure = function(cb) {
+  if (!this.id) {
+    cb(undefined, {
+      "errcode": "NOT_CONNECTED",
+      "message": "Cannot secure a disconnected socket"
+    });
+    return;
+  } else if (!chrome.sockets.tcp.secure) {
+    cb(undefined, {
+      "errcode": "FAILED",
+      "message": "Secure method not available"
+    });
+    return;
+  }
+  this.pause().then(function() {
+    chrome.sockets.tcp.secure(this.id, {}, function(secureResult) {
+      // Always unpause the socket, regardless of whether .secure succeeds.
+      this.unpause().then(function() {
+        if (secureResult !== 0) {
+          cb(undefined, {
+            "errcode": "FAILED",
+            "message": "Secure failed: " + secureResult + ': ' +
+                Socket_chrome.ERROR_MAP[secureResult]
+          });
+          return;
+        }
+        cb();
+      }.bind(this), function(e) {
+        cb(undefined, {
+          "errcode": "FAILED",
+          "message": "Secure failed: error unpausing socket"
+        });
+      });
+    }.bind(this));
+  }.bind(this), function(e) {
+    cb(undefined, {
+      "errcode": "FAILED",
+      "message": "Secure failed: error pausing socket"
+    });
+  });
+};
+
+/**
+ * Pauses the socket
+ * @method pause
+ * @private
+ * @returns {Promise} Promise to be fulfilled on pause.
+ */
+Socket_chrome.prototype.pause = function() {
+  if (!this.id) {
+    return Promise.reject('Cannot pause disconnected socket');
+  }
+  return new Promise(function(fulfill, reject) {
+    chrome.sockets.tcp.setPaused(this.id, true, fulfill);
+  }.bind(this));
+};
+
+/**
+ * Unpauses the socket
+ * @method unpause
+ * @private
+ * @returns {Promise} Promise to be fulfilled on unpause.
+ */
+Socket_chrome.prototype.unpause = function() {
+  if (!this.id) {
+    return Promise.reject('Cannot unpause disconnected socket');
+  }
+  return new Promise(function(fulfill, reject) {
+    chrome.sockets.tcp.setPaused(this.id, false, fulfill);
+  }.bind(this));
+};
+
+/**
  * Write data to the socket.
  * @method write
  * @param {ArrayBuffer} data The data to write
@@ -134,6 +211,8 @@ Socket_chrome.ERROR_MAP = {
   '-104': 'CONNECTION_FAILED',
   '-105': 'NAME_NOT_RESOLVED',
   '-106': 'INTERNET_DISCONNECTED',
+  '-107': 'SSL_PROTOCOL_ERROR',
+  '-200': 'CERT_COMMON_NAME_INVALID',
   '-1000': 'GENERIC_CORDOVA_FAILURE'  //See Cordova Plugin socket.js
 };
 
