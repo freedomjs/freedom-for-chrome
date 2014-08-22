@@ -253,8 +253,8 @@ Socket_chrome.handleReadError = function (readInfo) {
     console.warn('Dropped Read Error: ', readInfo);
     return;
   }
-  Socket_chrome.removeActive(readInfo.socketId);
   Socket_chrome.active[readInfo.socketId].dispatchDisconnect(readInfo.resultCode);
+  Socket_chrome.removeActive(readInfo.socketId);
 };
 
 /**
@@ -292,8 +292,8 @@ Socket_chrome.handleAcceptError = function (info) {
     return;
   }
 
-  Socket_chrome.removeActive(info.socketId);
   Socket_chrome.active[info.socketId].dispatchDisconnect(info.resultCode);
+  Socket_chrome.removeActive(info.socketId);
 };
 
 /**
