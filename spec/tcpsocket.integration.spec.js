@@ -12,7 +12,7 @@ describe('Tcpsocket_chrome', function () {
     }
     return new Uint8Array(arr).buffer;
   }
-  
+
   it("Works as a Client", function (done) {
     socket.connect('www.google.com', 80, function() {
       console.warn('connected');
@@ -27,7 +27,7 @@ describe('Tcpsocket_chrome', function () {
       }, 500);
     });
   });
-  
+
   it("Sends from Client to Server", function(done) {
     var cspy = jasmine.createSpy('client');
     var onconnect = jasmine.createSpy('cconnect');
@@ -60,4 +60,7 @@ describe('Tcpsocket_chrome', function () {
       client.connect('127.0.0.1', 9981, onconnect);
     });
   });
+
+  // TODO: add tests for tcpsocket.secure once chrome.sockets.tcp.secure
+  // is available in production Chrome.
 });
