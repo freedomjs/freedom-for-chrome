@@ -112,11 +112,17 @@ Socket_chrome.prototype.secure = function(cb) {
         }
         cb();
       }.bind(this), function(e) {
-        console.error('Error unpausing socket: ', e);
+        cb(undefined, {
+          "errcode": "FAILED",
+          "message": "Secure failed: error unpausing socket"
+        });
       });
     }.bind(this));
   }.bind(this), function(e) {
-    console.error('Error pausing socket: ', e);
+    cb(undefined, {
+      "errcode": "FAILED",
+      "message": "Secure failed: error pausing socket"
+    });
   });
 };
 
@@ -205,6 +211,8 @@ Socket_chrome.ERROR_MAP = {
   '-104': 'CONNECTION_FAILED',
   '-105': 'NAME_NOT_RESOLVED',
   '-106': 'INTERNET_DISCONNECTED',
+  '-107': 'SSL_PROTOCOL_ERROR',
+  '-200': 'CERT_COMMON_NAME_INVALID',
   '-1000': 'GENERIC_CORDOVA_FAILURE'  //See Cordova Plugin socket.js
 };
 
