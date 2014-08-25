@@ -43,7 +43,6 @@ FILES.karma = fileInfo.unGlob([].concat(
   fileInfo.FILES.specPlatformUnit,
   fileInfo.FILES.srcProviderIntegration,
   fileInfo.FILES.specProviderIntegration
-//).map(addPrefix));
 ).map(addPrefix).concat(
   FILES.platform,
   FILES.platformSpec
