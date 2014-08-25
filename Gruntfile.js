@@ -76,7 +76,7 @@ module.exports = function(grunt) {
         singleRun: true,
         autoWatch: false,
         cordovaSettings: {
-          platforms: ['android'],//, 'ios'],providers/tcpsocket.js
+          platforms: ['android'],//, 'ios'],
           plugins: [
             'org.chromium.common',
             'org.chromium.socket',
