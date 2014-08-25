@@ -173,15 +173,15 @@ Socket_chrome.prototype.write = function(data, cb) {
 
   chrome.sockets.tcp.send(this.id, data, function(sendInfo) {
     if (sendInfo.resultCode < 0) {
-      Socket_chrome.removeActive(this.id);
+      this.dispatchDisconnect(sendInfo.resultCode);
       return cb(undefined, {
         'errcode': 'UNKNOWN',
         'message': 'Send Error: ' + sendInfo.resultCode + ': ' + Socket_chrome.errorStringOfCode(sendInfo.resultCode),
       });
     } else if (sendInfo.bytesSent !== data.byteLength) {
-      Socket_chrome.removeActive(this.id);
+      this.dispatchDisconnect('UNKNOWN');
       return cb(undefined, {
-        'errcode': 'CONNECTION_RESET',
+        'errcode': 'UNKNOWN',
         'message': 'Write Partially completed.'
       });
     }
@@ -190,10 +190,9 @@ Socket_chrome.prototype.write = function(data, cb) {
 };
 
 
-// Error codes are at:
-// https://code.google.com/p/chromium/codesearch#
-//     chromium/src/net/base/net_error_list.h
 Socket_chrome.ERROR_MAP = {
+  // Error codes are at:
+  // https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
   '-1': 'IO_PENDING',
   '-2': 'FAILED',
   '-3': 'ABORTED',
@@ -213,7 +212,8 @@ Socket_chrome.ERROR_MAP = {
   '-106': 'INTERNET_DISCONNECTED',
   '-107': 'SSL_PROTOCOL_ERROR',
   '-200': 'CERT_COMMON_NAME_INVALID',
-  '-1000': 'GENERIC_CORDOVA_FAILURE'  //See Cordova Plugin socket.js
+   // See Cordova Plugin socket.js
+  '-1000': 'GENERIC_CORDOVA_FAILURE'
 };
 
 /**
@@ -237,6 +237,14 @@ Socket_chrome.errorStringOfCode = function(code) {
  * @param {Number} code the code returned by chrome when the socket closed.
  */
 Socket_chrome.prototype.dispatchDisconnect = function (code) {
+  if (!this.id) {
+    // Don't send more than one dispatchDisconnect event.
+    return;
+  }
+
+  Socket_chrome.removeActive(this.id);
+  delete this.id;
+
   if (code === 0) {
     this.dispatchEvent('onDisconnect', {
       errcode: 'SUCCESS',
@@ -333,7 +341,6 @@ Socket_chrome.handleReadError = function (readInfo) {
     return;
   }
   Socket_chrome.active[readInfo.socketId].dispatchDisconnect(readInfo.resultCode);
-  Socket_chrome.removeActive(readInfo.socketId);
 };
 
 /**
@@ -372,7 +379,6 @@ Socket_chrome.handleAcceptError = function (info) {
   }
 
   Socket_chrome.active[info.socketId].dispatchDisconnect(info.resultCode);
-  Socket_chrome.removeActive(info.socketId);
 };
 
 /**
@@ -444,16 +450,16 @@ Socket_chrome.prototype.startAcceptLoop =
  */
 Socket_chrome.prototype.close = function(continuation) {
   if (this.id) {
-    Socket_chrome.removeActive(this.id);
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
-    this.namespace.disconnect(this.id, function() {});
-    delete this.id;
-    continuation();
+    this.namespace.disconnect(this.id, function() {
+      this.dispatchDisconnect(0);
+      continuation();
+    }.bind(this));
   } else {
     continuation(undefined, {
       'errcode': 'SOCKET_CLOSED',
-      'message': 'Socket Already Closed'
+      'message': 'Socket Already Closed, or was never openned'
     });
   }
 };
