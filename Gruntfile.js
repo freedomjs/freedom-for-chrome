@@ -43,6 +43,7 @@ FILES.karma = fileInfo.unGlob([].concat(
   fileInfo.FILES.specPlatformUnit,
   fileInfo.FILES.srcProviderIntegration,
   fileInfo.FILES.specProviderIntegration
+//).map(addPrefix));
 ).map(addPrefix).concat(
   FILES.platform,
   FILES.platformSpec
@@ -64,7 +65,7 @@ module.exports = function(grunt) {
       },
       single: { singleRun: true, autoWatch: false },
       watch: { singleRun: false, autoWatch: true },
-      phantom: { 
+      phantom: {
         exclude: FILES.karma.exclude.concat(
           fileInfo.FILES.specProviderIntegration.map(addPrefix)),
         browsers: ['PhantomJS'],
@@ -76,7 +77,7 @@ module.exports = function(grunt) {
         singleRun: true,
         autoWatch: false,
         cordovaSettings: {
-          platforms: ['android'],//, 'ios'],
+          platforms: ['android'],//, 'ios'],providers/tcpsocket.js
           plugins: [
             'org.chromium.common',
             'org.chromium.socket',
