@@ -64,7 +64,7 @@ module.exports = function(grunt) {
       },
       single: { singleRun: true, autoWatch: false },
       watch: { singleRun: false, autoWatch: true },
-      phantom: { 
+      phantom: {
         exclude: FILES.karma.exclude.concat(
           fileInfo.FILES.specProviderIntegration.map(addPrefix)),
         browsers: ['PhantomJS'],

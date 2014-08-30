@@ -57,8 +57,8 @@ Socket_chrome.prototype.getInfo = function(continuation) {
 Socket_chrome.prototype.connect = function(hostname, port, cb) {
   if (this.id) {
     cb(undefined, {
-      "errcode": "ALREADY_CONNECTED",
-      "message": "Cannot Connect Existing Socket"
+      'errcode': 'ALREADY_CONNECTED',
+      'message': 'Cannot Connect Existing Socket'
     });
     return;
   }
@@ -67,8 +67,8 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
     chrome.sockets.tcp.connect(this.id, hostname, port, function (result) {
       if (result < 0) {
         cb(undefined, {
-          "errcode": "CONNECTION_FAILED",
-          "message": "Chrome Connection Failed: " +
+          'errcode': 'CONNECTION_FAILED',
+          'message': 'Chrome Connection Failed: ' +
               Socket_chrome.ERROR_MAP[result]
         });
       } else {
@@ -87,14 +87,14 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
 Socket_chrome.prototype.secure = function(cb) {
   if (!this.id) {
     cb(undefined, {
-      "errcode": "NOT_CONNECTED",
-      "message": "Cannot secure a disconnected socket"
+      'errcode': 'NOT_CONNECTED',
+      'message': 'Cannot secure a disconnected socket'
     });
     return;
   } else if (!chrome.sockets.tcp.secure) {
     cb(undefined, {
-      "errcode": "FAILED",
-      "message": "Secure method not available"
+      'errcode': 'CONNECTION_FAILED',
+      'message': 'Secure method not available'
     });
     return;
   }
@@ -104,8 +104,8 @@ Socket_chrome.prototype.secure = function(cb) {
       this.unpause().then(function() {
         if (secureResult !== 0) {
           cb(undefined, {
-            "errcode": "FAILED",
-            "message": "Secure failed: " + secureResult + ': ' +
+            'errcode': 'CONNECTION_FAILED',
+            'message': 'Secure failed: ' + secureResult + ': ' +
                 Socket_chrome.ERROR_MAP[secureResult]
           });
           return;
@@ -113,15 +113,15 @@ Socket_chrome.prototype.secure = function(cb) {
         cb();
       }.bind(this), function(e) {
         cb(undefined, {
-          "errcode": "FAILED",
-          "message": "Secure failed: error unpausing socket"
+          'errcode': 'CONNECTION_FAILED',
+          'message': 'Secure failed: error unpausing socket'
         });
       });
     }.bind(this));
   }.bind(this), function(e) {
     cb(undefined, {
-      "errcode": "FAILED",
-      "message": "Secure failed: error pausing socket"
+      'errcode': 'CONNECTION_FAILED',
+      'message': 'Secure failed: error pausing socket'
     });
   });
 };
@@ -165,24 +165,24 @@ Socket_chrome.prototype.unpause = function() {
 Socket_chrome.prototype.write = function(data, cb) {
   if (!this.id) {
     cb(undefined, {
-      "errcode": "NOT_CONNECTED",
-      "message": "Cannot Write on Closed Socket"
+      'errcode': 'NOT_CONNECTED',
+      'message': 'Cannot Write on Closed Socket'
     });
     return;
   }
 
   chrome.sockets.tcp.send(this.id, data, function(sendInfo) {
     if (sendInfo.resultCode < 0) {
-      Socket_chrome.removeActive(this.id);
+      this.dispatchDisconnect(sendInfo.resultCode);
       return cb(undefined, {
-        "errcode": Socket_chrome.errorStringOfCode(sendInfo.resultCode),
-        "message": "Send Error: " + sendInfo.resultCode
+        'errcode': 'UNKNOWN',
+        'message': 'Send Error: ' + sendInfo.resultCode + ': ' + Socket_chrome.errorStringOfCode(sendInfo.resultCode),
       });
     } else if (sendInfo.bytesSent !== data.byteLength) {
-      Socket_chrome.removeActive(this.id);
+      this.dispatchDisconnect('UNKNOWN');
       return cb(undefined, {
-        "errcode": "CONNECTION_RESET",
-        "message": "Write Partially completed."
+        'errcode': 'UNKNOWN',
+        'message': 'Write Partially completed.'
       });
     }
     cb();
@@ -190,10 +190,9 @@ Socket_chrome.prototype.write = function(data, cb) {
 };
 
 
-// Error codes are at:
-// https://code.google.com/p/chromium/codesearch#
-//     chromium/src/net/base/net_error_list.h
 Socket_chrome.ERROR_MAP = {
+  // Error codes are at:
+  // https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
   '-1': 'IO_PENDING',
   '-2': 'FAILED',
   '-3': 'ABORTED',
@@ -213,7 +212,8 @@ Socket_chrome.ERROR_MAP = {
   '-106': 'INTERNET_DISCONNECTED',
   '-107': 'SSL_PROTOCOL_ERROR',
   '-200': 'CERT_COMMON_NAME_INVALID',
-  '-1000': 'GENERIC_CORDOVA_FAILURE'  //See Cordova Plugin socket.js
+   // See Cordova Plugin socket.js
+  '-1000': 'GENERIC_CORDOVA_FAILURE'
 };
 
 /**
@@ -237,6 +237,14 @@ Socket_chrome.errorStringOfCode = function(code) {
  * @param {Number} code the code returned by chrome when the socket closed.
  */
 Socket_chrome.prototype.dispatchDisconnect = function (code) {
+  if (!this.id) {
+    // Don't send more than one dispatchDisconnect event.
+    return;
+  }
+
+  Socket_chrome.removeActive(this.id);
+  delete this.id;
+
   if (code === 0) {
     this.dispatchEvent('onDisconnect', {
       errcode: 'SUCCESS',
@@ -249,8 +257,8 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
     });
   } else {
     this.dispatchEvent('onDisconnect', {
-      errcode: Socket_chrome.errorStringOfCode(code),
-      message: 'Socket Error: ' + code
+      errcode: 'UNKOWN',
+      message: 'Socket Error: ' + code + ': ' + Socket_chrome.errorStringOfCode(code)
     });
   }
 };
@@ -333,7 +341,6 @@ Socket_chrome.handleReadError = function (readInfo) {
     return;
   }
   Socket_chrome.active[readInfo.socketId].dispatchDisconnect(readInfo.resultCode);
-  Socket_chrome.removeActive(readInfo.socketId);
 };
 
 /**
@@ -372,7 +379,6 @@ Socket_chrome.handleAcceptError = function (info) {
   }
 
   Socket_chrome.active[info.socketId].dispatchDisconnect(info.resultCode);
-  Socket_chrome.removeActive(info.socketId);
 };
 
 /**
@@ -385,8 +391,8 @@ Socket_chrome.handleAcceptError = function (info) {
 Socket_chrome.prototype.listen = function(address, port, callback) {
   if (this.id) {
     callback(undefined, {
-      errcode: "ALREADY_CONNECTED",
-      message: "Cannot Listen on existing socket."
+      errcode: 'ALREADY_CONNECTED',
+      message: 'Cannot Listen on existing socket.'
     });
     return;
   }
@@ -422,12 +428,12 @@ Socket_chrome.prototype.startAcceptLoop =
 
   if (result !== 0) {
     if (Socket_chrome.ERROR_MAP.hasOwnProperty(result)) {
-      errorMsg = "Chrome Listen failed: " + Socket_chrome.ERROR_MAP[result];
+      errorMsg = 'Chrome Listen failed: ' + Socket_chrome.ERROR_MAP[result];
     } else {
-      errorMsg = "Chrome Listen failed: Unknown code " + result;
+      errorMsg = 'Chrome Listen failed: Unknown code ' + result;
     }
     callbackFromListen(undefined, {
-      errcode: "CONNECTION_FAILURE",
+      errcode: 'CONNECTION_FAILURE',
       message: errorMsg
     });
     return;
@@ -444,21 +450,21 @@ Socket_chrome.prototype.startAcceptLoop =
  */
 Socket_chrome.prototype.close = function(continuation) {
   if (this.id) {
-    Socket_chrome.removeActive(this.id);
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
-    this.namespace.disconnect(this.id, function() {});
-    delete this.id;
-    continuation();
+    this.namespace.disconnect(this.id, function() {
+      this.dispatchDisconnect(0);
+      continuation();
+    }.bind(this));
   } else {
     continuation(undefined, {
-      "errcode": "SOCKET_CLOSED",
-      "message": "Socket Already Closed"
+      'errcode': 'SOCKET_CLOSED',
+      'message': 'Socket Already Closed, or was never openned'
     });
   }
 };
 
 /** REGISTER PROVIDER **/
 if (typeof fdom !== 'undefined') {
-  fdom.apis.register("core.tcpsocket", Socket_chrome);
+  fdom.apis.register('core.tcpsocket', Socket_chrome);
 }
