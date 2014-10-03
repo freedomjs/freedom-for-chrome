@@ -121,7 +121,8 @@ Socket_chrome.prototype.secure = function(cb) {
 
 /**
  * Prepares a socket for becoming secure after the next read event.
- * See details at https://github.com/uProxy/uproxy/issues/413
+ * See details at
+ * https://github.com/freedomjs/freedom/wiki/prepareSecure-API-Usage
  * @method prepareSecure
  * @param {Function} cb Function to call with completion or error.
  */
