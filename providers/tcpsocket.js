@@ -55,8 +55,6 @@ Socket_chrome.prototype.getInfo = function(continuation) {
  * @param {Function} cb Function to call with completion or error.
  */
 Socket_chrome.prototype.connect = function(hostname, port, cb) {
-  console.log('Socket_chrome.prototype.connect called, ' +
-      'hostname: ' + hostname + ', port: ' + port);
   if (this.id) {
     cb(undefined, {
       'errcode': 'ALREADY_CONNECTED',
@@ -87,7 +85,6 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
  * @param {Function} cb Function to call with completion or error.
  */
 Socket_chrome.prototype.secure = function(cb) {
-  console.log('Socket_chrome.prototype.secure called');
   if (!this.id) {
     cb(undefined, {
       'errcode': 'NOT_CONNECTED',
@@ -129,7 +126,6 @@ Socket_chrome.prototype.secure = function(cb) {
  * @param {Function} cb Function to call with completion or error.
  */
 Socket_chrome.prototype.prepareSecure = function(cb) {
-  console.log('Socket_chrome.prototype.prepareSecure called');
   if (!this.id) {
     cb(undefined, {
       'errcode': 'NOT_CONNECTED',
@@ -182,8 +178,6 @@ Socket_chrome.prototype.unpause = function() {
  * @param {Function} cb Function to call when data is written
  */
 Socket_chrome.prototype.write = function(data, cb) {
-  console.log('Socket_chrome.prototype.write called, ' + String.fromCharCode.apply(null, new Uint8Array(data)));
-
   if (!this.id) {
     cb(undefined, {
       'errcode': 'NOT_CONNECTED',
