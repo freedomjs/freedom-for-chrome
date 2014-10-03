@@ -12,6 +12,7 @@ var Socket_chrome = function(channel, dispatchEvent, id) {
   this.dispatchEvent = dispatchEvent;
   this.id = id || undefined;
   this.namespace = chrome.sockets.tcp;
+  this.prepareSecureCalled = false;
   if (this.id) {
     Socket_chrome.addActive(this.id, this);
     chrome.sockets.tcp.setPaused(this.id, false, function() {
@@ -91,6 +92,12 @@ Socket_chrome.prototype.secure = function(cb) {
       'message': 'Cannot secure a disconnected socket'
     });
     return;
+  } else if (!this.prepareSecureCalled) {
+    cb(undefined, {
+      'errcode': 'CONNECTION_FAILED',
+      'message': 'prepareSecure not called before secure'
+    });
+    return;
   } else if (!chrome.sockets.tcp.secure) {
     cb(undefined, {
       'errcode': 'CONNECTION_FAILED',
@@ -134,7 +141,11 @@ Socket_chrome.prototype.prepareSecure = function(cb) {
     });
     return;
   }
-  this.pause().then(cb, function(e) {
+  this.pause().then(
+    function() {
+      this.prepareSecureCalled = true;
+      cb();
+    }.bind(this), function(e) {
     cb(undefined, {
       'errcode': 'CONNECTION_FAILED',
       'message': 'prepareSecure failed: error pausing socket'
