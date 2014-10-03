@@ -12,6 +12,7 @@ var Socket_chrome = function(channel, dispatchEvent, id) {
   this.dispatchEvent = dispatchEvent;
   this.id = id || undefined;
   this.namespace = chrome.sockets.tcp;
+  this.prepareSecureCalled = false;
   if (this.id) {
     Socket_chrome.addActive(this.id, this);
     chrome.sockets.tcp.setPaused(this.id, false, function() {
@@ -91,6 +92,12 @@ Socket_chrome.prototype.secure = function(cb) {
       'message': 'Cannot secure a disconnected socket'
     });
     return;
+  } else if (!this.prepareSecureCalled) {
+    cb(undefined, {
+      'errcode': 'CONNECTION_FAILED',
+      'message': 'prepareSecure not called before secure'
+    });
+    return;
   } else if (!chrome.sockets.tcp.secure) {
     cb(undefined, {
       'errcode': 'CONNECTION_FAILED',
@@ -98,30 +105,50 @@ Socket_chrome.prototype.secure = function(cb) {
     });
     return;
   }
-  this.pause().then(function() {
-    chrome.sockets.tcp.secure(this.id, {}, function(secureResult) {
-      // Always unpause the socket, regardless of whether .secure succeeds.
-      this.unpause().then(function() {
-        if (secureResult !== 0) {
-          cb(undefined, {
-            'errcode': 'CONNECTION_FAILED',
-            'message': 'Secure failed: ' + secureResult + ': ' +
-                Socket_chrome.ERROR_MAP[secureResult]
-          });
-          return;
-        }
-        cb();
-      }.bind(this), function(e) {
+  chrome.sockets.tcp.secure(this.id, {}, function(secureResult) {
+    // Always unpause the socket, regardless of whether .secure succeeds.
+    this.unpause().then(function() {
+      if (secureResult !== 0) {
         cb(undefined, {
           'errcode': 'CONNECTION_FAILED',
-          'message': 'Secure failed: error unpausing socket'
+          'message': 'Secure failed: ' + secureResult + ': ' +
+              Socket_chrome.ERROR_MAP[secureResult]
         });
+        return;
+      }
+      cb();
+    }.bind(this), function(e) {
+      cb(undefined, {
+        'errcode': 'CONNECTION_FAILED',
+        'message': 'Secure failed: error unpausing socket'
       });
-    }.bind(this));
-  }.bind(this), function(e) {
+    });
+  }.bind(this));
+};
+
+/**
+ * Prepares a socket for becoming secure after the next read event.
+ * See details at
+ * https://github.com/freedomjs/freedom/wiki/prepareSecure-API-Usage
+ * @method prepareSecure
+ * @param {Function} cb Function to call with completion or error.
+ */
+Socket_chrome.prototype.prepareSecure = function(cb) {
+  if (!this.id) {
+    cb(undefined, {
+      'errcode': 'NOT_CONNECTED',
+      'message': 'Cannot prepareSecure a disconnected socket'
+    });
+    return;
+  }
+  this.pause().then(
+    function() {
+      this.prepareSecureCalled = true;
+      cb();
+    }.bind(this), function(e) {
     cb(undefined, {
       'errcode': 'CONNECTION_FAILED',
-      'message': 'Secure failed: error pausing socket'
+      'message': 'prepareSecure failed: error pausing socket'
     });
   });
 };
