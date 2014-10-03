@@ -1,75 +1,68 @@
 /**
  * Gruntfile for freedom-for-chrome.js
  *
- * Here are the common tasks used
+ * This repository provides chrome (app and extension)
+ * specific packaging of the freedom.js library.
  *
+ * Here are the common tasks defined:
+ * build
+ * - Lint source and compile
+ * - (Default task)
+ * - Unit tests for sanity checking possible without actually launching chrome
+ * test
+ * - Build and run chrome app for integration tests
+ * debug
+ * - Same as test, but browser remains open & watching for changes.
+ * ci
+ * - Continuous Integration target
+ * - Code coverage reports
  **/
 
-var FILES = {
-  platform: [
-    'providers/*.js'
-  ],
-  platformSpec: [
-    'spec/*.unit.spec.js'
-  ],
-  platformIntegration: [
-    'spec/*.integration.spec.js'
-  ]
-};
+var freedomPrefix = require('path').dirname(require.resolve('freedom'));
 
-var fileInfo = require('freedom'),
-  freedomPrefix = require.resolve('freedom').substr(0,
-      require.resolve('freedom').lastIndexOf('freedom') + 8);
-
-var addPrefix = function (file) {
-  if (file.indexOf('!') !== 0 && file.indexOf('/') !== 0) {
-    return freedomPrefix + file;
-  }
-  return file;
-};
-
-
-var freedomSrc = [].concat(
-  fileInfo.FILES.lib,
-  fileInfo.FILES.srcCore,
-  fileInfo.FILES.srcPlatform
-).map(addPrefix);
-
-FILES.karma = fileInfo.unGlob([].concat(
-  fileInfo.FILES.srcCore,
-  fileInfo.FILES.srcPlatform,
-  fileInfo.FILES.srcJasmineHelper,
-  fileInfo.FILES.specCoreUnit,
-  fileInfo.FILES.specPlatformUnit,
-  fileInfo.FILES.srcProviderIntegration,
-  fileInfo.FILES.specProviderIntegration
-).map(addPrefix).concat(
-  FILES.platform,
-  FILES.platformSpec
-));
-
-FILES.karmaCoverage = [].concat(
-  fileInfo.FILES.srcCore,
-  fileInfo.FILES.srcPlatform
-).map(addPrefix);
-
-module.exports = function(grunt) {
+module.exports = function (grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    browserify: {
+      freedom: {
+        files: {
+          'freedom-for-chrome.js': ['lib/entry.js']
+        },
+        options: {
+          postBundleCB: function (err, src, next) {
+            next(err, require('fs').readFileSync(
+              require.resolve('freedom/src/util/header.txt')
+            ) + src);
+          }
+        }
+      },
+      jasmine_unit: {
+        files: {
+          'spec.js': ['spec/*.unit.spec.js']
+        }
+      },
+      jasmine_full: {
+        files: {
+          'spec.js': ['spec/*.integration.spec.js']
+        }
+      },
+      options: {
+        ignore: ['ws'],
+        transform: [['folderify', {global: true}]]
+      }
+    },
     karma: {
       options: {
-        configFile: 'karma.conf.js',
+        configFile: require.resolve('freedom/karma.conf')
         //Need to run connect:default to host files
-        proxies: {'/': 'http://localhost:8000/'}
       },
-      single: { singleRun: true, autoWatch: false },
-      watch: { singleRun: false, autoWatch: true },
-      phantom: { 
-        exclude: FILES.karma.exclude.concat(
-          fileInfo.FILES.specProviderIntegration.map(addPrefix)),
+      phantom: {
         browsers: ['PhantomJS'],
         singleRun: true,
-        autoWatch: false
+        autoWatch: false,
+        options: {
+          basePath: __dirname
+        }
       },
       cordova: {
         browsers: ['Cordova'],
@@ -81,88 +74,71 @@ module.exports = function(grunt) {
             'org.chromium.common',
             'org.chromium.socket',
             'org.chromium.storage',
-            'org.apache.cordova.console',
+            'org.apache.cordova.console'
             //'org.chromium.polyfill.xhr_features',
           ]
         }
       }
     },
+    // used for karma unit tests.
     connect: {
-      default: {
+      freedom: {
         options: {
           port: 8000,
           keepalive: false,
-          base: [freedomPrefix, './']
+          base: [freedomPrefix]
         }
       }
     },
     jshint: {
-      providers: [FILES.platform],
+      providers: ['providers/*.js'],
+      lib: ['lib/*.js'],
       options: {
         '-W069': true
-      }
-    },
-    uglify: {
-      freedom: {
-        options: {
-          sourceMap: true,
-          // sourceMapName must be the same as that defined in the final comment
-          // of the `freedom/src/util/postamble.js`
-          sourceMapName: 'freedom.map',
-          sourceMapIncludeSources: true,
-          mangle: false,
-          // compress: false, wrap: false, // uncomment to get a clean out file.
-          beautify: true,
-          preserveComments: function(node, comment) {
-            return comment.value.indexOf('jslint') !== 0;
-          },
-          banner: require('fs').readFileSync(freedomPrefix + 'src/util/preamble.js', 'utf8'),
-          footer: require('fs').readFileSync(freedomPrefix + 'src/util/postamble.js', 'utf8')
-        },
-        files: {
-          'freedom-for-chrome.js': freedomSrc.concat(FILES.platform)
-        }
       }
     },
     integration: {
       providers: {
         options: {
           templateId: 'khhlpmfebmkkibipnllkeanfadmigbnj',
-          spec: FILES.platformIntegration,
-          helper: FILES.platform,
-          keepBrowser: false
+          spec: ['spec.js'],
+          helper: [
+            {path: 'freedom-for-chrome.js', include: false},
+            {path: freedomPrefix + '/providers', name: 'providers', include: false},
+            {path: freedomPrefix + '/spec', name: 'spec', include: false}
+          ],
+          keepBrowser: true
         }
       }
     }
   });
-
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-jshint');
+  
+  grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-contrib-connect');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-karma');
 
   grunt.loadTasks('tasks');
 
   grunt.registerTask('build', [
-    'jshint:providers',
-    'uglify',
-    'connect:default'
+    'jshint',
+    'browserify:freedom'
+  ]);
+  grunt.registerTask('unit', [
+    'browserify:jasmine_unit',
+    'connect',
+    'karma:phantom'
   ]);
   grunt.registerTask('test', [
     'build',
-    'karma:single',
+    'unit',
+    'browserify:jasmine_full',
     'integration'
-  ]);
-  grunt.registerTask('debug', [
-    'build',
-    'karma:watch'
   ]);
   grunt.registerTask('cordova', [
     'build',
     'karma:cordova'
   ]);
 
-  grunt.registerTask('default', ['build', 'karma:phantom']);
+  grunt.registerTask('default', ['build', 'unit']);
 };
-
-module.exports.FILES = FILES;

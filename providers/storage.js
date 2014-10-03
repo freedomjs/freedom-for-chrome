@@ -80,6 +80,5 @@ Storage_chrome.prototype.clear = function(continuation) {
 };
 
 /** REGISTER PROVIDER **/
-if (typeof fdom !== 'undefined') {
-  fdom.apis.register("core.storage", Storage_chrome);
-}
+exports.provider = Storage_chrome;
+exports.name = 'core.storage';

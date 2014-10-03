@@ -1,5 +1,7 @@
+spec.js
 build_spec/
 .grunt/
+.build
 .*.swp
 tools/coverage/
 

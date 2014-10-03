@@ -14,6 +14,7 @@
     {"socket":["tcp-connect","udp-send-to","udp-bind"]},
     "storage"
   ],
+  "content_security_policy": "script-src: http://localhost 'self'; object-src http://localhost 'self'",
   "sockets":{
     "tcp": {
       "connect": ["*"]

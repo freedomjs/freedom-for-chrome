@@ -1,7 +1,9 @@
 freedom-for-chrome.js
 freedom.map
+spec.js
 build_spec/
 .grunt/
+.build
 .*.swp
 tools/coverage/
 

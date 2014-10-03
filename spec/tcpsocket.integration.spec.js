@@ -1,8 +1,10 @@
+var tcpsock = require('../providers/tcpsocket');
+
 describe('Tcpsocket_chrome', function () {
   var socket, dispatch;
   beforeEach(function () {
     dispatch = jasmine.createSpy('dispatchEvent');
-    socket = new Socket_chrome(undefined, dispatch);
+    socket = new tcpsock.provider(undefined, dispatch);
   });
 
   function rawStringToBuffer (str) {
@@ -37,7 +39,7 @@ describe('Tcpsocket_chrome', function () {
       console.warn('connection');
       expect(evt).toEqual('onConnection');
       expect(msg.socket).toBeDefined();
-      receiver = new Socket_chrome(undefined, d2, msg.socket);
+      receiver = new tcpsock.provider(undefined, d2, msg.socket);
       console.log('new socket id', msg);
     });
     onconnect.and.callFake(function() {
@@ -56,7 +58,7 @@ describe('Tcpsocket_chrome', function () {
     });
     socket.listen('127.0.0.1', 9981, function() {
       console.warn('listening');
-      client = new Socket_chrome(undefined, cspy);
+      client = new tcpsock.provider(undefined, cspy);
       client.connect('127.0.0.1', 9981, onconnect);
     });
   });

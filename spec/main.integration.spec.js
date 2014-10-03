@@ -1,9 +1,5 @@
-describe("Test in extension", function() {
+describe("Chrome App Framework Works", function() {
   it("passes", function() {
-    expect(true).toBe(true);
-    return true;
-  });
-  it("Also passes", function() {
     expect(true).toBe(true);
     return true;
   });

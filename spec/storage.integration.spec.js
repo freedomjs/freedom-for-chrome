@@ -1,8 +1,10 @@
+var provider = require('../providers/storage');
+
 describe('Storage_chrome', function() {
   var storage, dispatch;
   beforeEach(function() {
     dispatch = jasmine.createSpy('dispatchEvent');
-    storage = new Storage_chrome(undefined, dispatch);
+    storage = new provider.provider(undefined, dispatch);
   });
 
   it('Persists Data', function(done) {

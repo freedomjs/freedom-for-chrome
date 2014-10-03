@@ -1,3 +1,4 @@
+var udpsock = require('../providers/udpsocket');
 // White-box test for the Chrome APIs implementation of
 // Freedom's UDP socket provider.
 // Modeled on Freedom's social.loopback.unit.spec.js.
@@ -14,7 +15,7 @@ describe("udpsocket", function() {
   var continuation = jasmine.createSpy('continuation');
 
   beforeEach(function() {
-    provider = new UdpSocket_chrome(
+    provider = new udpsock.provider(
         jasmine.createSpy('channel'),
         jasmine.createSpy('dispatchEvent'));
 
