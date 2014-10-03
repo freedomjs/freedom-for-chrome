@@ -55,6 +55,8 @@ Socket_chrome.prototype.getInfo = function(continuation) {
  * @param {Function} cb Function to call with completion or error.
  */
 Socket_chrome.prototype.connect = function(hostname, port, cb) {
+  console.log('Socket_chrome.prototype.connect called, ' +
+      'hostname: ' + hostname + ', port: ' + port);
   if (this.id) {
     cb(undefined, {
       'errcode': 'ALREADY_CONNECTED',
@@ -85,6 +87,7 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
  * @param {Function} cb Function to call with completion or error.
  */
 Socket_chrome.prototype.secure = function(cb) {
+  console.log('Socket_chrome.prototype.secure called');
   if (!this.id) {
     cb(undefined, {
       'errcode': 'NOT_CONNECTED',
@@ -98,30 +101,46 @@ Socket_chrome.prototype.secure = function(cb) {
     });
     return;
   }
-  this.pause().then(function() {
-    chrome.sockets.tcp.secure(this.id, {}, function(secureResult) {
-      // Always unpause the socket, regardless of whether .secure succeeds.
-      this.unpause().then(function() {
-        if (secureResult !== 0) {
-          cb(undefined, {
-            'errcode': 'CONNECTION_FAILED',
-            'message': 'Secure failed: ' + secureResult + ': ' +
-                Socket_chrome.ERROR_MAP[secureResult]
-          });
-          return;
-        }
-        cb();
-      }.bind(this), function(e) {
+  chrome.sockets.tcp.secure(this.id, {}, function(secureResult) {
+    // Always unpause the socket, regardless of whether .secure succeeds.
+    this.unpause().then(function() {
+      if (secureResult !== 0) {
         cb(undefined, {
           'errcode': 'CONNECTION_FAILED',
-          'message': 'Secure failed: error unpausing socket'
+          'message': 'Secure failed: ' + secureResult + ': ' +
+              Socket_chrome.ERROR_MAP[secureResult]
         });
+        return;
+      }
+      cb();
+    }.bind(this), function(e) {
+      cb(undefined, {
+        'errcode': 'CONNECTION_FAILED',
+        'message': 'Secure failed: error unpausing socket'
       });
-    }.bind(this));
-  }.bind(this), function(e) {
+    });
+  }.bind(this));
+};
+
+/**
+ * Prepares a socket for becoming secure after the next read event.
+ * See details at https://github.com/uProxy/uproxy/issues/413
+ * @method prepareSecure
+ * @param {Function} cb Function to call with completion or error.
+ */
+Socket_chrome.prototype.prepareSecure = function(cb) {
+  console.log('Socket_chrome.prototype.prepareSecure called');
+  if (!this.id) {
+    cb(undefined, {
+      'errcode': 'NOT_CONNECTED',
+      'message': 'Cannot prepareSecure a disconnected socket'
+    });
+    return;
+  }
+  this.pause().then(cb, function(e) {
     cb(undefined, {
       'errcode': 'CONNECTION_FAILED',
-      'message': 'Secure failed: error pausing socket'
+      'message': 'prepareSecure failed: error pausing socket'
     });
   });
 };
@@ -163,6 +182,8 @@ Socket_chrome.prototype.unpause = function() {
  * @param {Function} cb Function to call when data is written
  */
 Socket_chrome.prototype.write = function(data, cb) {
+  console.log('Socket_chrome.prototype.write called, ' + String.fromCharCode.apply(null, new Uint8Array(data)));
+
   if (!this.id) {
     cb(undefined, {
       'errcode': 'NOT_CONNECTED',
