@@ -107,7 +107,7 @@ module.exports = function (grunt) {
             {path: freedomPrefix + '/providers', name: 'providers', include: false},
             {path: freedomPrefix + '/spec', name: 'spec', include: false}
           ],
-          keepBrowser: true
+          keepBrowser: false
         }
       }
     }
