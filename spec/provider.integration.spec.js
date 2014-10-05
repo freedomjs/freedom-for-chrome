@@ -23,3 +23,7 @@ describe("integration: storage.indexeddb.json",
 describe("integration: transport.webrtc.json",
     require('freedom/spec/providers/transport/transport.integration.src').bind(this,
     "providers/transport/webrtc/transport.webrtc.json"));
+
+describe("integration: core.tcpsocket",
+    require('freedom/spec/providers/socket/tcpsocket.integration.src').bind(this,
+    require('../providers/tcpsocket')));
