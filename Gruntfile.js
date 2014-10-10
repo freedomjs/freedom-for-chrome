@@ -47,7 +47,6 @@ module.exports = function (grunt) {
         }
       },
       options: {
-        ignore: ['ws'],
         transform: [['folderify', {global: true}]]
       }
     },
