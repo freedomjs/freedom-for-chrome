@@ -27,5 +27,5 @@ describe("integration: transport.webrtc.json",
     "providers/transport/webrtc/transport.webrtc.json", setup));
 
 describe("integration: core.tcpsocket",
-    require('freedom/spec/providers/socket/tcpsocket.integration.src').bind(this,
+    require('freedom/spec/providers/coreIntegration/tcpsocket.integration.src').bind(this,
     require('../providers/tcpsocket'), setup));
