@@ -1,4 +1,4 @@
-var udpsock = require('../providers/udpsocket');
+var udpsock = require('../providers/core.udpsocket');
 // White-box test for the Chrome APIs implementation of
 // Freedom's UDP socket provider.
 // Modeled on Freedom's social.loopback.unit.spec.js.

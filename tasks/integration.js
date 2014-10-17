@@ -21,7 +21,7 @@ module.exports = function (grunt) {
       helper: undefined,
       keepBrowser: false,
       port: 9989,
-      timeout : 10000
+      timeout : 30000
     });
     
     ctx.done = done;

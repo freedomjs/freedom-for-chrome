@@ -6,7 +6,7 @@ var setup = function() {
     require('freedom/providers/core/logger.console'),
     require('freedom/providers/core/peerconnection.unprivileged'),
     require('freedom/providers/core/websocket.unprivileged'),
-    require('../providers/storage')
+    require('../providers/core.storage')
   ]);
   testUtil.setModuleStrategy(require('freedom/src/link/worker'), '/scripts/freedom-for-chrome.js');
 };
@@ -28,4 +28,4 @@ describe("integration: transport.webrtc.json",
 
 describe("integration: core.tcpsocket",
     require('freedom/spec/providers/coreIntegration/tcpsocket.integration.src').bind(this,
-    require('../providers/tcpsocket'), setup));
+    require('../providers/core.tcpsocket'), setup));

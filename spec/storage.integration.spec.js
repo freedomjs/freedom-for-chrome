@@ -1,6 +1,6 @@
-var provider = require('../providers/storage');
+var provider = require('../providers/core.storage');
 
-describe('Storage_chrome', function() {
+describe('integration: core.storage', function() {
   var storage, dispatch;
   beforeEach(function() {
     dispatch = jasmine.createSpy('dispatchEvent');

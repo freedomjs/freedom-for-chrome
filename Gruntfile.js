@@ -9,13 +9,10 @@
  * - Lint source and compile
  * - (Default task)
  * - Unit tests for sanity checking possible without actually launching chrome
+ * unit
+ * - Build and run jasmine headless unit tests
  * test
  * - Build and run chrome app for integration tests
- * debug
- * - Same as test, but browser remains open & watching for changes.
- * ci
- * - Continuous Integration target
- * - Code coverage reports
  **/
 
 var freedomPrefix = require('path').dirname(require.resolve('freedom'));

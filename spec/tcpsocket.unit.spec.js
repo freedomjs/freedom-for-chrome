@@ -1,4 +1,4 @@
-var tcpsock = require('../providers/tcpsocket');
+var tcpsock = require('../providers/core.tcpsocket');
 // White-box test for the Chrome APIs implementation of
 // Freedom's TCP socket provider.
 // Modeled on Freedom's social.loopback.unit.spec.js.
