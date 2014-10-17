@@ -53,9 +53,11 @@ Storage_chrome.prototype.get = function(key, continuation) {
  */
 Storage_chrome.prototype.set = function(key, value, continuation) {
   // console.log('storage_chrome: saving ' + key);
-  var diff = {};
-  diff[key] = value;
-  chrome.storage.local.set(diff, continuation);
+  this.get(key, function(val) {
+    var diff = {};
+    diff[key] = value;
+    chrome.storage.local.set(diff, continuation.bind({}, val));
+  });
 };
 
 /**
@@ -66,7 +68,9 @@ Storage_chrome.prototype.set = function(key, value, continuation) {
  */
 Storage_chrome.prototype.remove = function(key, continuation) {
   // console.log('storage_chrome: removing ' + key);
-  chrome.storage.local.remove(key, continuation);
+  this.get(key, function(val) {
+    chrome.storage.local.remove(key, continuation.bind({}, val));
+  });
 };
 
 /**
@@ -80,6 +84,5 @@ Storage_chrome.prototype.clear = function(continuation) {
 };
 
 /** REGISTER PROVIDER **/
-if (typeof fdom !== 'undefined') {
-  fdom.apis.register("core.storage", Storage_chrome);
-}
+exports.provider = Storage_chrome;
+exports.name = 'core.storage';

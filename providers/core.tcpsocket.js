@@ -492,6 +492,5 @@ Socket_chrome.prototype.close = function(continuation) {
 };
 
 /** REGISTER PROVIDER **/
-if (typeof fdom !== 'undefined') {
-  fdom.apis.register('core.tcpsocket', Socket_chrome);
-}
+exports.provider = Socket_chrome;
+exports.name = 'core.tcpsocket';
