@@ -65,18 +65,25 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
   }
   chrome.sockets.tcp.create({}, function(createInfo) {
     this.id = createInfo.socketId;
-    chrome.sockets.tcp.connect(this.id, hostname, port, function (result) {
-      if (result < 0) {
-        cb(undefined, {
-          'errcode': 'CONNECTION_FAILED',
-          'message': 'Chrome Connection Failed: ' +
-              Socket_chrome.ERROR_MAP[result]
-        });
-      } else {
-        Socket_chrome.addActive(this.id, this);
-        cb();
-      }
-    }.bind(this));
+    try {
+      chrome.sockets.tcp.connect(this.id, hostname, port, function (result) {
+        if (result < 0) {
+          cb(undefined, {
+            'errcode': 'CONNECTION_FAILED',
+            'message': 'Chrome Connection Failed: ' +
+                Socket_chrome.ERROR_MAP[result]
+          });
+        } else {
+          Socket_chrome.addActive(this.id, this);
+          cb();
+        }
+      }.bind(this));
+    } catch (e) {
+      cb(undefined, {
+        'errcode': 'CONNECTION_FAILED',
+        'message': 'Chrome Connection Failed: ' + e.message
+      });
+    }
   }.bind(this));
 };
 
