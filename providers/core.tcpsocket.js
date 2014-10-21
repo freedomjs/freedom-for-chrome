@@ -479,19 +479,18 @@ Socket_chrome.prototype.close = function(continuation) {
   if (this.id) {
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
-    this.namespace.disconnect(this.id, function() {
+    this.namespace.close(this.id, function() {
       this.dispatchDisconnect(0);
       continuation();
     }.bind(this));
   } else {
     continuation(undefined, {
       'errcode': 'SOCKET_CLOSED',
-      'message': 'Socket Already Closed, or was never openned'
+      'message': 'Socket Already Closed, or was never opened'
     });
   }
 };
 
 /** REGISTER PROVIDER **/
-if (typeof fdom !== 'undefined') {
-  fdom.apis.register('core.tcpsocket', Socket_chrome);
-}
+exports.provider = Socket_chrome;
+exports.name = 'core.tcpsocket';

@@ -1,5 +1,5 @@
-/*globals chrome,fdom:true,console,Promise*/
-/*jslint indent:2,white:true,sloppy:true */
+/*globals chrome,console,Promise*/
+/*jslint indent:2,white:true,node:true,sloppy:true */
 /**
  * A freedom.js interface to Chrome sockets
  * @constructor
@@ -148,6 +148,5 @@ UdpSocket_chrome.prototype.destroy = function(continuation) {
 };
 
 /** REGISTER PROVIDER **/
-if (typeof fdom !== 'undefined') {
-  fdom.apis.register("core.udpsocket", UdpSocket_chrome);
-}
+exports.provider = UdpSocket_chrome;
+exports.name = 'core.udpsocket';

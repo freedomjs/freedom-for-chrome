@@ -13,12 +13,12 @@ git clone git@github.com:freedomjs/freedomjs.github.io.git tools/freedomjs
 # Copy latest release
 mkdir -p tools/freedomjs/dist/freedom-for-chrome
 cp freedom-for-chrome.js tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.$TAG.js
-cp freedom-for-chrome.js.map tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.$TAG.js.map
+#cp freedom-for-chrome.js.map tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.$TAG.js.map
 
 # Link to the latest
 rm -f tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.latest.js*
 ln -s freedom-for-chrome.$TAG.js tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.latest.js
-ln -s freedom-for-chrome.$TAG.js.map tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.latest.js.map
+#ln -s freedom-for-chrome.$TAG.js.map tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.latest.js.map
 
 # Commit
 cd tools/freedomjs
