@@ -3,7 +3,7 @@ var setup = function() {
   testUtil.setSpecBase(window.location.origin + "/scripts/");
   testUtil.setCoreProviders([
     require('freedom/providers/core/core.unprivileged'),
-    require('freedom/providers/core/logger.console'),
+    require('freedom/providers/core/console.unprivileged'),
     require('freedom/providers/core/peerconnection.unprivileged'),
     require('freedom/providers/core/websocket.unprivileged'),
     require('../providers/core.storage')
