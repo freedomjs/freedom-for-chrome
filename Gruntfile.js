@@ -108,7 +108,7 @@ module.exports = function(grunt) {
           sourceMap: true,
           // sourceMapName must be the same as that defined in the final comment
           // of the `freedom/src/util/postamble.js`
-          sourceMapName: 'freedom.map',
+          sourceMapName: 'freedom-for-chrome.js.map',
           sourceMapIncludeSources: true,
           mangle: false,
           // compress: false, wrap: false, // uncomment to get a clean out file.
