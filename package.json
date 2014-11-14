@@ -45,7 +45,7 @@
     "selenium-standalone": "^2.43.1-2.9.0",
     "temporary": "~0.0.8",
     "wd": "^0.3.8",
-    "webrtc-adapter": "0.0.3"
+    "webrtc-adapter": "^0.0.4"
   },
   "peerDependencies": {
     "freedom": "~0.6.0"
