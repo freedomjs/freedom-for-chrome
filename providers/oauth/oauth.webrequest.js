@@ -2,10 +2,13 @@
 /*jslint indent:2,browser:true, node:true */
 var PromiseCompat = require('es6-promise').Promise;
 
+var oAuthRedirectId = "freedom.oauth.redirect.handler";
+
 var ChromeWebRequestAuth = function() {
   "use strict";
   //this.origins = [];
   this.listeners = {};
+  this.tabs = {};
 };
 
 ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuation) {
@@ -20,7 +23,7 @@ ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuati
           redirectURIs[i].indexOf('http://') === 0) {
         continuation({
           redirect: redirectURIs[i],
-          state: monitorNav(redirectURIs[i], instance)
+          state: oAuthRedirectId + Math.random()
         });
         return true;
       }
@@ -30,37 +33,38 @@ ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuati
 };
 
 ChromeWebRequestAuth.prototype.launchAuthFlow = function(authUrl, stateObj, continuation) {
-  'use strict';
-  window.open(authUrl);
+  "use strict";
+  var listener = this.reqListener.bind(this, stateObj, continuation);
+  this.listeners[stateObj.state] = listener;
+  chrome.webRequest.onBeforeRequest.addListener(listener, {
+    types: ["main_frame"],
+    urls: [stateObj.redirect]
+  });
+  
+  chrome.tabs.create({
+    url: authUrl,
+    active: true
+  }, function(stateObj, tab) {
+    this.tabs[stateObj.state] = tab;
+  }.bind(this, stateObj));
+  
+  return state;
 };
 
-var oAuthFlows = [];
   
-function reqListener(req) {
-  'use strict';
-  var i;
-  for (i = 0; i < oAuthFlows.length; i += 1) {
-    if (req.url.indexOf(oAuthFlows[i].state) >= 0) {
-      oAuthFlows[i].instance.dispatchEvent("oAuthEvent", req.url);
-      oAuthFlows.splice(i, 1);
-      break;
-    }
+ChromeWebRequestAuth.prototype.reqListener = function(stateObj, continuation, req) {
+  "use strict";
+  continuation(req.url);
+  if (this.listeners.hasOwnProperty(stateObj.state)) {
+    chrome.webRequest.onBeforeRequest.removeListener(this.listeners[stateObj.state]);
+    delete this.listeners[stateObj.state];
   }
-  chrome.tabs.remove(req.tabId);
-  chrome.webRequest.onBeforeRequest.removeListener(reqListener);
-}
+  if (this.tabs.hasOwnProperty(stateObj.state)) {
+    chrome.tabs.remove(this.tabs[stateObj.state].id);
+    delete this.tabs[stateObj.state];
+  }
+};
   
-function monitorNav(url, inst) {
-  'use strict';
-  var state = Math.random();
-  oAuthFlows.push({state: state, url: url, instance: inst});
-  chrome.webRequest.onBeforeRequest.addListener(reqListener, {
-    types: ["main_frame"],
-    urls: [url]
-  });
-  return state;
-}
-
 /**
  * If we're a chrome extension with correct permissions, we can use url watching
  * to monitor any redirect URL.
