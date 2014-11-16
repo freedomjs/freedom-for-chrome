@@ -30,7 +30,10 @@ describe("integration: transport.webrtc.json",
 describe("integration: core.tcpsocket",
     require('freedom/spec/providers/coreIntegration/tcpsocket.integration.src').bind(this,
     require('../providers/core.tcpsocket'), setup));
-
+// core.udpsocket
+describe("integration: core.udpsocket",
+    require('freedom/spec/providers/coreIntegration/udpsocket.integration.src').bind(this,
+    require('../providers/core.udpsocket'), setup));
 // core.oauth
 describe("integration: core.oauth",
     require("freedom/spec/providers/coreIntegration/oauth.integration.src").bind(this,
@@ -40,3 +43,4 @@ describe("integration: core.oauth",
       require("../providers/oauth/oauth.identity"),
     ],
     setup));
+

@@ -2,6 +2,50 @@
 /*jslint indent:2,browser:true, node:true */
 var PromiseCompat = require('es6-promise').Promise;
 
+var ChromeWebRequestAuth = function() {
+  "use strict";
+  this.listeners = {};
+};
+
+var canWebRequest = false;
+var origins = [];
+
+if (typeof chrome !== 'undefined' &&
+    typeof chrome.permissions !== 'undefined') { //cca doesn't support chrome.permissions yet
+  chrome.permissions.getAll(function (permissions) {
+    // Require webRequest permissions.
+    if (permissions.permissions.indexOf('webRequest') > -1) {
+      canWebRequest = true;
+      origins = permissions.origins;
+    }
+  });
+}
+
+
+ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuation) {
+  'use strict';
+  if (canWebRequest) {
+    var i, j;
+    for (i = 0; i < redirectURIs.length; i += 1) {
+      for (j = 0; j < origins.length; j += 1) {
+        if (redirectURIs[i].indexOf(origins[j]) === 0) {
+          continuation({
+            redirect: redirectURIs[i],
+            state: monitorNav(redirectURIs[i], instance)
+          });
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+};
+
+ChromeWebRequestAuth.prototype.launchAuthFlow = function(authUrl, stateObj, continuation) {
+  'use strict';
+  window.open(authUrl);
+};
+
 var oAuthFlows = [];
   
 function reqListener(req) {
@@ -33,26 +77,4 @@ function monitorNav(url, inst) {
  * If we're a chrome extension with correct permissions, we can use url watching
  * to monitor any redirect URL.
  */
-exports.register = function (OAuth) {
-  'use strict';
-  if (typeof chrome !== 'undefined' &&
-      typeof chrome.permissions !== 'undefined') { //cca doesn't support chrome.permissions yet
-    chrome.permissions.getAll(function (permissions) {
-      // Require webRequest permissions.
-      if (permissions.permissions.indexOf('webRequest') < 0) {
-        return;
-      }
-      OAuth.register(function (redirectURIs, instance) {
-        var i, j;
-        for (i = 0; i < redirectURIs.length; i += 1) {
-          for (j = 0; j < permissions.origins.length; j += 1) {
-            if (redirectURIs[i].indexOf(permissions.origins[j]) === 0) {
-              return PromiseCompat.resolve({redirect: redirectURIs[i], state: monitorNav(redirectURIs[i], instance)});
-            }
-          }
-        }
-        return false;
-      });
-    });
-  }
-};
+module.exports = ChromeWebRequestAuth;
