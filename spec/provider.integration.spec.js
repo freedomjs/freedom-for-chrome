@@ -39,8 +39,8 @@ describe("integration: core.oauth",
     require("freedom/spec/providers/coreIntegration/oauth.integration.src").bind(this,
     require("freedom/providers/core/core.oauth"), 
     [ 
-      require("../providers/oauth/oauth.webrequest"),
       require("../providers/oauth/oauth.identity"),
+      require("../providers/oauth/oauth.webrequest"),
     ],
     setup));
 

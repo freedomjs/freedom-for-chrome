@@ -4,37 +4,25 @@ var PromiseCompat = require('es6-promise').Promise;
 
 var ChromeWebRequestAuth = function() {
   "use strict";
+  //this.origins = [];
   this.listeners = {};
 };
 
-var canWebRequest = false;
-var origins = [];
-
-if (typeof chrome !== 'undefined' &&
-    typeof chrome.permissions !== 'undefined') { //cca doesn't support chrome.permissions yet
-  chrome.permissions.getAll(function (permissions) {
-    // Require webRequest permissions.
-    if (permissions.permissions.indexOf('webRequest') > -1) {
-      canWebRequest = true;
-      origins = permissions.origins;
-    }
-  });
-}
-
-
 ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuation) {
   'use strict';
-  if (canWebRequest) {
-    var i, j;
+  var i;
+  if (typeof chrome !== 'undefined' &&
+      typeof chrome.permissions !== 'undefined' && //cca doesn't support chrome.permissions yet
+      typeof chrome.tabs !== 'undefined' &&
+      typeof chrome.webRequest !== 'undefined') { 
     for (i = 0; i < redirectURIs.length; i += 1) {
-      for (j = 0; j < origins.length; j += 1) {
-        if (redirectURIs[i].indexOf(origins[j]) === 0) {
-          continuation({
-            redirect: redirectURIs[i],
-            state: monitorNav(redirectURIs[i], instance)
-          });
-          return true;
-        }
+      if (redirectURIs[i].indexOf('https://') === 0 || 
+          redirectURIs[i].indexOf('http://') === 0) {
+        continuation({
+          redirect: redirectURIs[i],
+          state: monitorNav(redirectURIs[i], instance)
+        });
+        return true;
       }
     }
   }
