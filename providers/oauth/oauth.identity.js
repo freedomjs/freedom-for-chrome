@@ -43,4 +43,4 @@ ChromeIdentityAuth.prototype.launchAuthFlow = function(authUrl, stateObj, contin
  * If we're a chrome extension with correct permissions, we can use url watching
  * to monitor any redirect URL.
  */
-module.exports = ChromeIdentityAuth
+module.exports = ChromeIdentityAuth;
