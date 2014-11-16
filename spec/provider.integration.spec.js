@@ -34,7 +34,7 @@ describe("integration: core.tcpsocket",
 // core.oauth
 describe("integration: core.oauth",
     require("freedom/spec/providers/coreIntegration/oauth.integration.src").bind(this,
-    require("freedom/providers/core/oauth"), 
+    require("freedom/providers/core/core.oauth"), 
     [ 
       require("../providers/oauth/oauth.webrequest"),
       require("../providers/oauth/oauth.identity"),
