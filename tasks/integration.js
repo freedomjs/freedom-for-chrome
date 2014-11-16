@@ -37,7 +37,7 @@ module.exports = function (grunt) {
       async.apply(startDriver, ctx),
       async.apply(runTests, ctx),
       async.apply(finishTests, ctx),
-      //async.apply(cleanup, ctx)
+      async.apply(cleanup, ctx)
     ], done);
   });
   
