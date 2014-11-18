@@ -89,7 +89,6 @@ module.exports = function (grunt) {
     jshint: {
       providers: ['providers/**/*.js'],
       lib: ['lib/**/*.js'],
-      //spec: ['spec/**/*.js'],
       options: {
         '-W069': true
       }

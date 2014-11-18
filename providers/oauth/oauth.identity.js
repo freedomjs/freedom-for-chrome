@@ -6,7 +6,6 @@ var oAuthRedirectId = "freedom.oauth.redirect.handler";
 
 var ChromeIdentityAuth = function() {
   "use strict";
-  //this.listeners = {};
 };
 
 ChromeIdentityAuth.prototype.initiateOAuth = function(redirectURIs, continuation) {
@@ -40,7 +39,7 @@ ChromeIdentityAuth.prototype.launchAuthFlow = function(authUrl, stateObj, contin
 };
 
 /**
- * If we're a chrome extension with correct permissions, we can use url watching
- * to monitor any redirect URL.
+ * If we have access to chrome.identity, use the built-in support for oAuth flows
+ * chrome.identity exposes a very similar interface to core.oauth.
  */
 module.exports = ChromeIdentityAuth;

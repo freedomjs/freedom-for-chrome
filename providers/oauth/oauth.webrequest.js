@@ -6,7 +6,6 @@ var oAuthRedirectId = "freedom.oauth.redirect.handler";
 
 var ChromeWebRequestAuth = function() {
   "use strict";
-  //this.origins = [];
   this.listeners = {};
   this.tabs = {};
 };

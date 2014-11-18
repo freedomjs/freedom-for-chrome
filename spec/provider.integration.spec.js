@@ -25,6 +25,12 @@ describe("integration: transport.webrtc.json",
     require('freedom/spec/providers/transport/transport.integration.src').bind(this,
     "providers/transport/webrtc/transport.webrtc.json", setup));
 
+// core.rtcpeerconnection
+describe("integration: core.rtcpeerconnection",
+    require("freedom/spec/providers/coreIntegration/rtcpeerconnection.integration.src").bind(this,
+    require("freedom/providers/core/core.rtcpeerconnection"),
+    require("freedom/providers/core/core.rtcdatachannel"), setup));
+
 // core.oauth
 describe("integration: core.oauth - identity",
     require("freedom/spec/providers/coreIntegration/oauth.integration.src").bind(this,
