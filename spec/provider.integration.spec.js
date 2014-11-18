@@ -31,6 +31,17 @@ describe("integration: core.rtcpeerconnection",
     require("freedom/providers/core/core.rtcpeerconnection"),
     require("freedom/providers/core/core.rtcdatachannel"), setup));
 
+// core.tcpsocket
+describe("integration: core.tcpsocket",
+    require('freedom/spec/providers/coreIntegration/tcpsocket.integration.src').bind(this,
+    require('../providers/core.tcpsocket'), setup));
+/**
+// core.udpsocket
+describe("integration: core.udpsocket",
+    require('freedom/spec/providers/coreIntegration/udpsocket.integration.src').bind(this,
+    require('../providers/core.udpsocket'), setup));
+**/
+
 // core.oauth
 describe("integration: core.oauth - identity",
     require("freedom/spec/providers/coreIntegration/oauth.integration.src").bind(this,
@@ -48,11 +59,3 @@ describe("integration: core.oauth - webrequest",
     setup));
 **/
 
-// core.tcpsocket
-describe("integration: core.tcpsocket",
-    require('freedom/spec/providers/coreIntegration/tcpsocket.integration.src').bind(this,
-    require('../providers/core.tcpsocket'), setup));
-// core.udpsocket
-describe("integration: core.udpsocket",
-    require('freedom/spec/providers/coreIntegration/udpsocket.integration.src').bind(this,
-    require('../providers/core.udpsocket'), setup));
