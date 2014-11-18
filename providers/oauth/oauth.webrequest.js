@@ -3,6 +3,14 @@
 var PromiseCompat = require('es6-promise').Promise;
 
 var oAuthRedirectId = "freedom.oauth.redirect.handler";
+var chromePermissions;
+
+if (typeof chrome !== 'undefined' &&
+   typeof chrome.permissions !== 'undefined') {
+  chrome.permissions.getAll(function (permissions) {
+    chromePermissions = permissions;
+  });
+}
 
 var ChromeWebRequestAuth = function() {
   "use strict";
@@ -12,19 +20,22 @@ var ChromeWebRequestAuth = function() {
 
 ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuation) {
   'use strict';
-  var i;
+  var i,j;
   if (typeof chrome !== 'undefined' &&
       typeof chrome.permissions !== 'undefined' && //cca doesn't support chrome.permissions yet
       typeof chrome.tabs !== 'undefined' &&
-      typeof chrome.webRequest !== 'undefined') { 
+      typeof chrome.webRequest !== 'undefined' &&
+      typeof chromePermissions !== 'undefined' &&
+      typeof chromePermissions.origins !== 'undefined') { 
     for (i = 0; i < redirectURIs.length; i += 1) {
-      if (redirectURIs[i].indexOf('https://') === 0 || 
-          redirectURIs[i].indexOf('http://') === 0) {
-        continuation({
-          redirect: redirectURIs[i],
-          state: oAuthRedirectId + Math.random()
-        });
-        return true;
+      for (j = 0; j < chromePermissions.origins.length; j++) {
+        if (redirectURIs[i].indexOf(chromePermissions.origins[j]) === 0) {
+          continuation({
+            redirect: redirectURIs[i],
+            state: oAuthRedirectId + Math.random()
+          });
+          return true;
+        }
       }
     }
   }
