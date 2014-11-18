@@ -15,9 +15,7 @@ var Socket_chrome = function(channel, dispatchEvent, id) {
   this.prepareSecureCalled = false;
   if (this.id) {
     Socket_chrome.addActive(this.id, this);
-    chrome.sockets.tcp.setPaused(this.id, false, function() {
-      console.log('Unpaused receiver');
-    });
+    chrome.sockets.tcp.setPaused(this.id, false);
   }
 };
 
