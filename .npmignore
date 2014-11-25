@@ -8,4 +8,5 @@ tools/coverage/
 npm-debug.log
 node_modules
 tools/freedomjs
+tools/freedom-for-chrome*
 _SpecRunner.html

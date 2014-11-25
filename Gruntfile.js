@@ -23,14 +23,7 @@ module.exports = function (grunt) {
     browserify: {
       freedom: {
         files: {
-          'freedom-for-chrome.js': ['lib/entry.js']
-        },
-        options: {
-          postBundleCB: function (err, src, next) {
-            next(err, require('fs').readFileSync(require.resolve('freedom/src/util/header.txt')) + 
-                      grunt.template.process('/** Version: <%= pkg.version %> **/\n') +
-                      src);
-          }
+          'tools/freedom-for-chrome.js': ['lib/entry.js']
         }
       },
       jasmine_unit: {
@@ -45,6 +38,16 @@ module.exports = function (grunt) {
       },
       options: {
         transform: [['folderify', {global: true}]]
+      }
+    },
+    concat: {
+      options: {
+        sourceMap: true,
+        banner: require('fs').readFileSync(require.resolve('freedom/src/util/header.txt')).toString()
+      },
+      dist: {
+        src: 'tools/freedom-for-chrome.js',
+        dest: 'freedom-for-chrome.js'
       }
     },
     karma: {
@@ -151,6 +154,7 @@ module.exports = function (grunt) {
   });
   
   grunt.loadNpmTasks('grunt-browserify');
+  grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-karma');
@@ -163,7 +167,8 @@ module.exports = function (grunt) {
 
   grunt.registerTask('build', [
     'jshint',
-    'browserify:freedom'
+    'browserify:freedom',
+    'concat'
   ]);
   grunt.registerTask('unit', [
     'browserify:jasmine_unit',
