@@ -43,6 +43,7 @@
     "karma-phantomjs-launcher": "~0.1.4",
     "karma-story-reporter": "^0.2.2",
     "karma-unicorn-reporter": "^0.1.4",
+    "node-json-minify": "^0.1.3-a",
     "selenium-standalone": "^2.43.1-2.9.0",
     "temporary": "~0.0.8",
     "wd": "^0.3.8",
