@@ -4,6 +4,7 @@ build_spec/
 .build
 .*.swp
 tools/coverage/
+tools/bundle.compiled.js
 
 npm-debug.log
 node_modules

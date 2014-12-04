@@ -20,6 +20,13 @@ var freedomPrefix = require('path').dirname(require.resolve('freedom'));
 module.exports = function (grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    'create-interface-bundle': {
+      freedom: {
+        files: {
+          'tools/bundle.compiled.js': [freedomPrefix + '/interface/*.json']
+        }
+      }
+    },
     browserify: {
       freedom: {
         files: {
@@ -37,7 +44,10 @@ module.exports = function (grunt) {
         }
       },
       options: {
-        transform: [['folderify', {global: true}]]
+        debug: true,
+        alias: [
+          './tools/bundle.compiled.js:freedomjs-interface-bundle'
+        ]
       }
     },
     concat: {
@@ -162,10 +172,12 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-bump');
   grunt.loadNpmTasks('grunt-npm');
   grunt.loadNpmTasks('grunt-shell');
+  grunt.loadNpmTasks('freedom');
 
   grunt.loadTasks('tasks');
 
   grunt.registerTask('build', [
+    'create-interface-bundle',
     'jshint',
     'browserify:freedom',
     'concat'

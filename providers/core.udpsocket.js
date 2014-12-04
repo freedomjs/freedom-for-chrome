@@ -4,10 +4,10 @@
  * A freedom.js interface to Chrome sockets
  * @constructor
  * @private
- * @param {fdom.Port} channel the module creating this provider.
+ * @param {} cap Capabilities for the provider
  * @param {Function} dispatchEvent Method for emitting events.
  */
-var UdpSocket_chrome = function(channel, dispatchEvent) {
+var UdpSocket_chrome = function(cap, dispatchEvent) {
   this.dispatchEvent = dispatchEvent;
   this.id = undefined;
 };

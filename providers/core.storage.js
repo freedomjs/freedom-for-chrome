@@ -5,9 +5,8 @@
  * A storage provider using chrome's local extension storage pool.
  * @constructor
  */
-var Storage_chrome = function(channel, dispatch) {
+var Storage_chrome = function(cap, dispatch) {
   this.dispatchEvents = dispatch;
-  this.channel = channel;
 };
 
 /**

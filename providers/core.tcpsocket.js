@@ -4,11 +4,11 @@
  * A freedom.js interface to Chrome sockets
  * @constructor
  * @private
- * @param {fdom.Port} channel the module creating this provider.
+ * @param {} cap Capabilities for the provider
  * @param {Function} dispatchEvent Method for emitting events.
  * @param {number?} id A pre-existing socket Id for the socket.
  */
-var Socket_chrome = function(channel, dispatchEvent, id) {
+var Socket_chrome = function(cap, dispatchEvent, id) {
   this.dispatchEvent = dispatchEvent;
   this.id = id || undefined;
   this.namespace = chrome.sockets.tcp;
@@ -208,7 +208,7 @@ Socket_chrome.prototype.write = function(data, cb) {
       this.dispatchDisconnect(sendInfo.resultCode);
       return cb(undefined, {
         'errcode': 'UNKNOWN',
-        'message': 'Send Error: ' + sendInfo.resultCode + ': ' + Socket_chrome.errorStringOfCode(sendInfo.resultCode),
+        'message': 'Send Error: ' + sendInfo.resultCode + ': ' + Socket_chrome.errorStringOfCode(sendInfo.resultCode)
       });
     } else if (sendInfo.bytesSent !== data.byteLength) {
       this.dispatchDisconnect('UNKNOWN');

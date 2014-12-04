@@ -1,5 +1,6 @@
 freedom-for-chrome.js
 freedom-for-chrome.js.map
+tools/bundle.compiled.js
 spec.js
 build_spec/
 .grunt/
