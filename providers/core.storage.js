@@ -37,6 +37,9 @@ Storage_chrome.prototype.get = function(key, continuation) {
   try {
     // console.log('storage_chrome: looking up ' + key);
     var val = chrome.storage.local.get(key, function(k, cb, items) {
+      if (items[k] === undefined) {
+        return cb(null);
+      }
       cb(items[k]);
     }.bind({}, key, continuation));
   } catch(e) {
