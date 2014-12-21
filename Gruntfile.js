@@ -23,7 +23,7 @@ module.exports = function (grunt) {
     browserify: {
       freedom: {
         files: {
-          'tools/freedom-for-chrome.js': ['lib/entry.js']
+          'build/freedom-for-chrome.js': ['lib/entry.js']
         }
       },
       jasmine_unit: {
@@ -46,7 +46,7 @@ module.exports = function (grunt) {
         banner: require('fs').readFileSync(require.resolve('freedom/src/util/header.txt')).toString()
       },
       dist: {
-        src: 'tools/freedom-for-chrome.js',
+        src: 'build/freedom-for-chrome.js',
         dest: 'freedom-for-chrome.js'
       }
     },
