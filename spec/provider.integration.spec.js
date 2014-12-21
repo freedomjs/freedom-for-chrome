@@ -3,9 +3,9 @@ var setup = function() {
   testUtil.setSpecBase(window.location.origin + "/scripts/");
   testUtil.setCoreProviders([
     require('freedom/providers/core/core.unprivileged'),
-    require('freedom/providers/core/console.unprivileged'),
-    require('freedom/providers/core/peerconnection.unprivileged'),
-    require('freedom/providers/core/websocket.unprivileged'),
+    require('freedom/providers/core/core.console'),
+    require('freedom/providers/core/core.peerconnection'),
+    require('freedom/providers/core/core.websocket'),
     require('../providers/core.storage')
   ]);
   testUtil.setModuleStrategy(require('freedom/src/link/worker'), '/scripts/freedom-for-chrome.js');
