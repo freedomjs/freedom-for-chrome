@@ -7,21 +7,21 @@ TAG=$(git describe --abbrev=0 --tags)
 #TAG=$(git describe --exact-match --tags HEAD 2>/dev/null)
 
 # Clone
-rm -rf tools/freedomjs
-git clone git@github.com:freedomjs/freedomjs.github.io.git tools/freedomjs
+rm -rf build/freedomjs
+git clone git@github.com:freedomjs/freedomjs.github.io.git build/freedomjs
 
 # Copy latest release
-mkdir -p tools/freedomjs/dist/freedom-for-chrome
-cp freedom-for-chrome.js tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.$TAG.js
-#cp freedom-for-chrome.js.map tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.$TAG.js.map
+mkdir -p build/freedomjs/dist/freedom-for-chrome
+cp freedom-for-chrome.js build/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.$TAG.js
+#cp freedom-for-chrome.js.map build/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.$TAG.js.map
 
 # Link to the latest
-rm -f tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.latest.js*
-ln -s freedom-for-chrome.$TAG.js tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.latest.js
-#ln -s freedom-for-chrome.$TAG.js.map tools/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.latest.js.map
+rm -f build/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.latest.js*
+ln -s freedom-for-chrome.$TAG.js build/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.latest.js
+#ln -s freedom-for-chrome.$TAG.js.map build/freedomjs/dist/freedom-for-chrome/freedom-for-chrome.latest.js.map
 
 # Commit
-cd tools/freedomjs
+cd build/freedomjs
 git add -A .
 git commit -m $FREEDOMCR/$COMMIT
 git push origin master
