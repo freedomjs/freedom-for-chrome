@@ -1,13 +1,12 @@
+build/
+
 spec.js
+
 build_spec/
 .grunt/
 .build
-.*.swp
-tools/coverage/
-tools/bundle.compiled.js
+node_modules/
 
 npm-debug.log
-node_modules
-tools/freedomjs
-tools/freedom-for-chrome*
 _SpecRunner.html
+.*.swp

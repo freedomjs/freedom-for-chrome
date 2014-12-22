@@ -16,7 +16,7 @@ Download the latest
 release and include it in your app either in your background page (if you want
 persistant funcitionality), or in your launch page (if you do not).
 
-Dependening on freedom.js
+Depending on freedom.js
 -------------------------
 
 This repository is packaged in the npm repository as freedom-for-chrome.

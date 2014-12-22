@@ -1,13 +1,14 @@
+build/
+
 freedom-for-chrome.js
 freedom-for-chrome.js.map
 spec.js
+
 build_spec/
 .grunt/
 .build
-.*.swp
-tools/coverage/
+node_modules/
 
 npm-debug.log
-node_modules
-tools/freedomjs
 _SpecRunner.html
+.*.swp
