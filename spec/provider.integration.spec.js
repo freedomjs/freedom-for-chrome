@@ -35,12 +35,11 @@ describe("integration: core.rtcpeerconnection",
 describe("integration: core.tcpsocket",
     require('freedom/spec/providers/coreIntegration/tcpsocket.integration.src').bind(this,
     require('../providers/core.tcpsocket'), setup));
-/**
+
 // core.udpsocket
 describe("integration: core.udpsocket",
     require('freedom/spec/providers/coreIntegration/udpsocket.integration.src').bind(this,
     require('../providers/core.udpsocket'), setup));
-**/
 
 // core.oauth
 describe("integration: core.oauth - identity",
