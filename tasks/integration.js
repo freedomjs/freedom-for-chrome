@@ -226,7 +226,7 @@ module.exports = function (grunt) {
       good = false;
     }
     if (ctx.keepBrowser) {
-      return next(good);
+      return next(good || new Error('One or more tests failed.'));
     }
 
     fs.removeSync(ctx.dir);
@@ -236,7 +236,7 @@ module.exports = function (grunt) {
       ctx.server && ctx.server.kill();
     }, 500);
     setTimeout(function() {
-      next(good);
+      next(good || new Error('One or more tests failed.'));
     }, 1000);
   }
 };
