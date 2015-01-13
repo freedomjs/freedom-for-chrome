@@ -24,7 +24,7 @@ var Socket_chrome = function(cap, dispatchEvent, id) {
  * from chrome can be routed properly.
  * @static
  * @private
- * @type {Object.<number,Socket_chrome>}
+ * @type {Object.<string,Socket_chrome>}
  * @see Socket_chrome.keyForActive
  */
 Socket_chrome.active = {};
@@ -298,8 +298,9 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
 
 /**
  * Generates an index key for {@Socket_chrome.active}.
- * The key is an integer equal to the socket ID for client sockets or, for
- * server sockets, to the negation of the socket ID.
+ * The key is a string with the format 'type.id', where type is 'client' if
+ * this is a client socket or 'server' if this is a server socket and id is
+ * the socket ID.
  * @method keyForActive
  * @private
  * @param {Object} namespace Socket namespace, indicating client or server socket.
@@ -308,7 +309,7 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
  * @see Socket_chrome.active
  */
 Socket_chrome.keyForActive = function(namespace, id) {
-  return id * (namespace === chrome.sockets.tcp ? 1 : -1);
+  return (namespace === chrome.sockets.tcp ? 'client' : 'socket') + '.' + id;
 };
 
 /**
