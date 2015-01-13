@@ -14,7 +14,7 @@ var Socket_chrome = function(cap, dispatchEvent, id) {
   this.namespace = chrome.sockets.tcp;
   this.prepareSecureCalled = false;
   if (this.id) {
-    Socket_chrome.addActive(this.id, this);
+    Socket_chrome.addActive(this);
     chrome.sockets.tcp.setPaused(this.id, false);
   }
 };
@@ -24,7 +24,7 @@ var Socket_chrome = function(cap, dispatchEvent, id) {
  * from chrome can be routed properly.
  * @static
  * @private
- * @type {Object.<number,Socket_chrome>}
+ * @type {Object.<string,Socket_chrome>}
  */
 Socket_chrome.active = {};
 
@@ -72,7 +72,7 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
                 Socket_chrome.ERROR_MAP[result]
           });
         } else {
-          Socket_chrome.addActive(this.id, this);
+          Socket_chrome.addActive(this);
           cb();
         }
       }.bind(this));
@@ -296,15 +296,26 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
 };
 
 /**
+ * Generates an index key for {@Socket_chrome.active}.
+ * @method keyForActive
+ * @private
+ * @param {Object} namespace Socket namespace, indicating client or server socket.
+ * @param {number} id The socketId, as provided by chrome.sockets.
+ * @static
+ */
+Socket_chrome.keyForActive = function(namespace, id) {
+  return (namespace === chrome.sockets.tcp ? 'client' : 'server') + ':' + id;
+};
+
+/**
  * Mark a socket as active, so that dispatched events can be routed to it.
  * This method is needed because chrome.sockets exposes a single event handler
  * for incoming data across all sockets.
  * @method addActive
  * @static
- * @param {number} id The socketId as provided by chrome.sockets
  * @param {Socket_chrome} socket The socket class associated with the id.
  */
-Socket_chrome.addActive = function(id, socket) {
+Socket_chrome.addActive = function(socket) {
   if (Object.keys(Socket_chrome.active).length === 0) {
     if (chrome.sockets.tcp) {
       chrome.sockets.tcp.onReceive.addListener(Socket_chrome.handleReadData);
@@ -318,17 +329,19 @@ Socket_chrome.addActive = function(id, socket) {
           Socket_chrome.handleAcceptError);
     }
   }
-  Socket_chrome.active[id] = socket;
+  Socket_chrome.active[Socket_chrome.keyForActive(
+      socket.namespace, socket.id)] = socket;
 };
 
 /**
  * Unmark a socket as active, and clean up event handlers if needed.
  * @method removeActive
  * @static
- * @param {number} id The socketId to no longer watch.
+ * @param {Socket_chrome} socket The socket class associated with the id.
  */
-Socket_chrome.removeActive = function(id) {
-  delete Socket_chrome.active[id];
+Socket_chrome.removeActive = function(socket) {
+  delete Socket_chrome.active[Socket_chrome.keyForActive(
+      socket.namespace, socket.id)];
   if (Object.keys(Socket_chrome.active).length === 0) {
     if (chrome.sockets.tcp) {
       chrome.sockets.tcp.onReceive.removeListener(
@@ -353,11 +366,12 @@ Socket_chrome.removeActive = function(id) {
  * @static
  */
 Socket_chrome.handleReadData = function (readInfo) {
-  if (!Socket_chrome.active[readInfo.socketId]) {
+  var key = Socket_chrome.keyForActive(chrome.sockets.tcp, readInfo.socketId);
+  if (!(key in Socket_chrome.active)) {
     console.warn('Dropped Read: ', readInfo);
     return;
   }
-  Socket_chrome.active[readInfo.socketId].dispatchEvent('onData', {data: readInfo.data});
+  Socket_chrome.active[key].dispatchEvent('onData', {data: readInfo.data});
 };
 
 /**
@@ -368,11 +382,12 @@ Socket_chrome.handleReadData = function (readInfo) {
  * @static
  */
 Socket_chrome.handleReadError = function (readInfo) {
-  if (!Socket_chrome.active[readInfo.socketId]) {
+  var key = Socket_chrome.keyForActive(chrome.sockets.tcp, readInfo.socketId);
+  if (!(key in Socket_chrome.active)) {
     console.warn('Dropped Read Error: ', readInfo);
     return;
   }
-  Socket_chrome.active[readInfo.socketId].dispatchDisconnect(readInfo.resultCode);
+  Socket_chrome.active[key].dispatchDisconnect(readInfo.resultCode);
 };
 
 /**
@@ -383,13 +398,15 @@ Socket_chrome.handleReadError = function (readInfo) {
  * @static
  */
 Socket_chrome.handleAccept = function (acceptInfo) {
-  if (!Socket_chrome.active[acceptInfo.socketId]) {
+  var key = Socket_chrome.keyForActive(chrome.sockets.tcpServer,
+      acceptInfo.socketId);
+  if (!(key in Socket_chrome.active)) {
     console.warn('Dropped Accept: ', acceptInfo);
     return;
   }
 
   chrome.sockets.tcp.getInfo(acceptInfo.clientSocketId, function(info) {
-    Socket_chrome.active[acceptInfo.socketId].dispatchEvent('onConnection', {
+    Socket_chrome.active[key].dispatchEvent('onConnection', {
       socket: acceptInfo.clientSocketId,
       host: info.peerAddress,
       port: info.peerPort
@@ -401,16 +418,18 @@ Socket_chrome.handleAccept = function (acceptInfo) {
  * React to client accept errors.
  * @method handleAcceptError
  * @private
- * @param {info} info The value returned by onAcceptError.
+ * @param {acceptInfo} acceptInfo The value returned by onAcceptError.
  * @static
  */
-Socket_chrome.handleAcceptError = function (info) {
-  if (!Socket_chrome.active[info.socketId]) {
+Socket_chrome.handleAcceptError = function (acceptInfo) {
+  var key = Socket_chrome.keyForActive(chrome.sockets.tcpServer,
+      acceptInfo.socketId);
+  if (!(key in Socket_chrome.active)) {
     console.warn('Dropped Accept Error: ', info);
     return;
   }
 
-  Socket_chrome.active[info.socketId].dispatchDisconnect(info.resultCode);
+  Socket_chrome.active[key].dispatchDisconnect(acceptInfo.resultCode);
 };
 
 /**
@@ -472,7 +491,7 @@ Socket_chrome.prototype.startAcceptLoop =
   }
 
   callbackFromListen();
-  Socket_chrome.addActive(this.id, this);
+  Socket_chrome.addActive(this);
 };
 
 /**
