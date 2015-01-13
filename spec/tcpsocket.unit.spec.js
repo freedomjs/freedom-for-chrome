@@ -37,9 +37,11 @@ describe("tcpsocket", function() {
             callback(getClientInfoResult);
           },
           onReceive: {
+            addListener: function() {},
             removeListener: function() {}
           },
           onReceiveError: {
+            addListener: function() {},
             removeListener: function() {}
           }
         },
@@ -51,9 +53,11 @@ describe("tcpsocket", function() {
             callback(listenResult);
           },
           onAccept: {
+            addListener: function() {},
             removeListener: function() {}
           },
           onAcceptError: {
+            addListener: function() {},
             removeListener: function() {}
           }
         }
@@ -68,6 +72,7 @@ describe("tcpsocket", function() {
     spyOn(chrome.sockets.tcpServer, 'create').and.callThrough();
     spyOn(chrome.sockets.tcpServer, 'listen').and.callThrough();
 
+    tcpsock.provider.active = {};
     provider = new tcpsock.provider(
         jasmine.createSpy('channel'),
         jasmine.createSpy('dispatchEvent'));
@@ -131,5 +136,21 @@ describe("tcpsocket", function() {
         100,
         jasmine.any(Function));
     expect(continuation).toHaveBeenCalled();
+  });
+
+  it('distinguishes client and server socket ids', function() {
+    createServerResult = { socketId: 1 };
+    listenResult = 0; // success!
+    provider.listen('127.0.0.1', 5000, continuation);
+
+    var otherProvider = new tcpsock.provider(
+        jasmine.createSpy('other channel'),
+        jasmine.createSpy('other dispatchEvent'));
+
+    createClientResult = { socketId: 1 };
+    connResult = 0, // success!
+    otherProvider.connect('localhost', 5000, continuation);
+
+    expect(Object.keys(tcpsock.provider.active).length).toEqual(2);
   });
 });
