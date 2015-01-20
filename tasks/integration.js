@@ -33,6 +33,7 @@ module.exports = function (grunt) {
 
     async.series([
       async.apply(buildSpec, ctx),
+      async.apply(installSelenium, ctx),
       async.apply(startSelenium, ctx),
       async.apply(startDriver, ctx),
       async.apply(runTests, ctx),
@@ -93,16 +94,31 @@ module.exports = function (grunt) {
     grunt.log.writeln('Done.');
     next();
   }
-  
-  function startSelenium(ctx, next) {
-    grunt.log.write('Starting Selenium...');
-    var server;
 
-    var spawnOptions = { stdio: 'pipe' };
-    var seleniumArgs = [
-      '-debug'
-    ];
-    ctx.server = selenium(spawnOptions, seleniumArgs);
+  function installSelenium(ctx, next) {
+    grunt.log.write('Checking Selenium...');
+    selenium.install(next);
+  }
+
+  function startSelenium(ctx, next) {
+    grunt.log.writeln('Done.');
+    grunt.log.write('Starting Selenium...');
+
+    selenium.start({
+      spawnOptions: { 
+        //stdio: 'pipe'
+      },
+      seleniumArgs: [
+        '-debug'
+      ]
+    }, function (err, child) {
+      if (err) {
+        grunt.fail.warn(err);
+      }
+      ctx.server = child;
+      grunt.log.writeln('Done.');
+      next();
+    });
     ctx.messages = [];
     ctx.inprogress = '';
     ctx.web = http.createServer(function (req, res) {
@@ -128,19 +144,7 @@ module.exports = function (grunt) {
           ctx.onMessage && ctx.onMessage();
       }
     }).listen(ctx.port);
-    
-    // Give Time for server to start.
-    setTimeout(checkSelenium.bind({}, next), 3000);
   };
-  
-  function checkSelenium(next) {
-    var probe = http.get("http://localhost:4444/", function() {
-      grunt.log.writeln('Done.');
-      next();
-    }).on('error', function() {
-      setTimeout(checkSelenium.bind({}, next), 1000);
-    });
-  }
 
   function startDriver(ctx,next) {
     grunt.log.write('Starting Browser...');
