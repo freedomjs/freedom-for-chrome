@@ -67,10 +67,12 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
     try {
       chrome.sockets.tcp.connect(this.id, hostname, port, function (result) {
         if (result < 0) {
+          var errorString = Socket_chrome.errorStringOfCode(result);
+          var freedomErrorCode = Socket_chrome.freedomErrorCode(errorString);
           cb(undefined, {
-            'errcode': 'CONNECTION_FAILED',
-            'message': 'Chrome Connection Failed: ' +
-                Socket_chrome.ERROR_MAP[result]
+            'errcode': freedomErrorCode,
+            'message': 'Chrome Connection Failed: ' + errorString +
+                ' ' + chrome.runtime.lastError.message
           });
         } else {
           Socket_chrome.addActive(this);
@@ -206,13 +208,13 @@ Socket_chrome.prototype.write = function(data, cb) {
 
   chrome.sockets.tcp.send(this.id, data, function(sendInfo) {
     if (sendInfo.resultCode < 0) {
-      this.dispatchDisconnect(sendInfo.resultCode);
+      var errorObject = this.dispatchDisconnect(sendInfo.resultCode);
       return cb(undefined, {
-        'errcode': 'UNKNOWN',
-        'message': 'Send Error: ' + sendInfo.resultCode + ': ' + Socket_chrome.errorStringOfCode(sendInfo.resultCode)
+        'errcode': errorObject['errcode'],
+        'message': 'Send Error: ' + errorObject['message']
       });
     } else if (sendInfo.bytesSent !== data.byteLength) {
-      this.dispatchDisconnect('UNKNOWN');
+      this.dispatchDisconnect();
       return cb(undefined, {
         'errcode': 'UNKNOWN',
         'message': 'Write Partially completed.'
@@ -224,6 +226,7 @@ Socket_chrome.prototype.write = function(data, cb) {
 
 
 Socket_chrome.ERROR_MAP = {
+  '0': 'SUCCESS',
   // Error codes are at:
   // https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
   '-1': 'IO_PENDING',
@@ -244,17 +247,38 @@ Socket_chrome.ERROR_MAP = {
   '-105': 'NAME_NOT_RESOLVED',
   '-106': 'INTERNET_DISCONNECTED',
   '-107': 'SSL_PROTOCOL_ERROR',
+  '-108': 'ADDRESS_INVALID',
+  '-109': 'ADDRESS_UNREACHABLE',
+  '-118': 'CONNECTION_TIMED_OUT',
   '-200': 'CERT_COMMON_NAME_INVALID',
    // See Cordova Plugin socket.js
   '-1000': 'GENERIC_CORDOVA_FAILURE'
 };
 
+// Map from names in the Chrome error map to corresponding Freedom error codes.
+Socket_chrome.FREEDOM_ERROR_MAP = {
+  'SUCCESS': 'SUCCESS',
+  'INVALID_ARGUMENT': 'INVALID_ARGUMENT',
+  'TIMED_OUT': 'TIMED_OUT',
+  'NETWORK_CHANGED': 'NETWORK_CHANGED',
+  'SOCKET_NOT_CONNECTED': 'NOT_CONNECTED',
+  'CONNECTION_CLOSED': 'CONNECTION_CLOSED',
+  'CONNECTION_RESET': 'CONNECTION_RESET',
+  'CONNECTION_REFUSED': 'CONNECTION_REFUSED',
+  'CONNECTION_FAILED': 'CONNECTION_FAILED',
+  'NAME_NOT_RESOLVED': 'CONNECTION_FAILED',
+  'ADDRESS_INVALID': 'CONNECTION_FAILED',
+  'ADDRESS_UNREACHABLE': 'CONNECTION_FAILED',
+  'CONNECTION_TIMED_OUT': 'TIMED_OUT',
+  'UNKNOWN': 'UNKNOWN'
+};
+
 /**
- * Get the error code associated with a chrome.socket error code.
+ * Get the Chrome error string associated with a chrome.socket error code.
  * @method errorStringOfCode
  * @static
  * @private
- * @param {Number} code The error number as described by chrome
+ * @param {Number=} code The error number as described by chrome
  * @returns {String} The error code as defined in the freedom.js interface.
  */
 Socket_chrome.errorStringOfCode = function(code) {
@@ -262,38 +286,52 @@ Socket_chrome.errorStringOfCode = function(code) {
       'UNKNOWN';
 };
 
+/**
+ * Get the Freedom error code associated with a Chrome error string
+ * @method freedomErrorCode
+ * @static
+ * @private
+ * @param {String=} errorString The Chrome error string
+ * @return {String} The corresponding Freedom error string (often identical).
+ */
+Socket_chrome.freedomErrorCode = function(errorString) {
+  return Socket_chrome.FREEDOM_ERROR_MAP[errorString] || 'UNKNOWN';
+};
+
 /*
  * Alert a consumer that a socket is disconnected, with appropriate
  * error message.
  * @method dispatchDisconnect
  * @private
- * @param {Number} code the code returned by chrome when the socket closed.
+ * @param {Number=} code the code returned by chrome when the socket closed.
+ * @return {{errorcode: string, message: string}} Error JSON object.
  */
 Socket_chrome.prototype.dispatchDisconnect = function (code) {
-  if (!this.id) {
-    // Don't send more than one dispatchDisconnect event.
-    return;
-  }
-
-  Socket_chrome.removeActive(this.id);
-  delete this.id;
-
-  if (code === 0) {
-    this.dispatchEvent('onDisconnect', {
-      errcode: 'SUCCESS',
-      message: 'Socket closed by call to close'
-    });
-  } else if(code === -100) {
-    this.dispatchEvent('onDisconnect', {
-      errcode: 'CONNECTION_CLOSED',
-      message: 'Connection closed gracefully'
-    });
+  var errorString = Socket_chrome.errorStringOfCode(code);
+  var freedomErrorCode = Socket_chrome.freedomErrorCode(errorString);
+  /** @type {string} */ var errorMessage;
+  if (freedomErrorCode === 'SUCCESS') {
+    errorMessage = 'Socket closed by call to close';
+  } else if(freedomErrorCode === 'CONNECTION_CLOSED') {
+    errorMessage = 'Connection closed gracefully';
   } else {
-    this.dispatchEvent('onDisconnect', {
-      errcode: 'UNKOWN',
-      message: 'Socket Error: ' + code + ': ' + Socket_chrome.errorStringOfCode(code)
-    });
+    errorMessage = 'Socket Error: ' + code + ': ' + errorString;
   }
+
+  var errorObject = {
+    'errorcode': freedomErrorCode,
+    'message': errorMessage
+  };
+
+  // Don't send more than one dispatchDisconnect event.
+  if (this.id) {
+    Socket_chrome.removeActive(this.id);
+    delete this.id;
+
+    this.dispatchEvent('onDisconnect', errorObject);
+  }
+
+  return errorObject;
 };
 
 /**
