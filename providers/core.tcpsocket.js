@@ -291,8 +291,8 @@ Socket_chrome.errorStringOfCode = function(code) {
  * @method freedomErrorCode
  * @static
  * @private
- * @param {string} errorString The Chrome error string
- * @return {string} The corresponding Freedom error string (often identical).
+ * @param {String=} errorString The Chrome error string
+ * @return {String} The corresponding Freedom error string (often identical).
  */
 Socket_chrome.freedomErrorCode = function(errorString) {
   return Socket_chrome.FREEDOM_ERROR_MAP[errorString] || 'UNKNOWN';
@@ -304,17 +304,9 @@ Socket_chrome.freedomErrorCode = function(errorString) {
  * @method dispatchDisconnect
  * @private
  * @param {Number=} code the code returned by chrome when the socket closed.
- * @return {!Object} Error JSON object.
+ * @return {{errorcode: string, message: string}} Error JSON object.
  */
 Socket_chrome.prototype.dispatchDisconnect = function (code) {
-  if (!this.id) {
-    // Don't send more than one dispatchDisconnect event.
-    return;
-  }
-
-  Socket_chrome.removeActive(this.id);
-  delete this.id;
-
   var errorString = Socket_chrome.errorStringOfCode(code);
   var freedomErrorCode = Socket_chrome.freedomErrorCode(errorString);
   /** @type {string} */ var errorMessage;
@@ -330,7 +322,15 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
     'errorcode': freedomErrorCode,
     'message': errorMessage
   };
-  this.dispatchEvent('onDisconnect', errorObject);
+
+  // Don't send more than one dispatchDisconnect event.
+  if (this.id) {
+    Socket_chrome.removeActive(this.id);
+    delete this.id;
+
+    this.dispatchEvent('onDisconnect', errorObject);
+  }
+
   return errorObject;
 };
 
