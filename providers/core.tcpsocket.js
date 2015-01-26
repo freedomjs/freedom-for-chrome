@@ -13,6 +13,9 @@ var Socket_chrome = function(cap, dispatchEvent, id) {
   this.id = id || undefined;
   this.namespace = chrome.sockets.tcp;
   this.prepareSecureCalled = false;
+
+  /** @private {Promise} */
+  this.infoAtDisconnect = null;
   if (this.id) {
     Socket_chrome.addActive(this);
     chrome.sockets.tcp.setPaused(this.id, false);
@@ -40,6 +43,8 @@ Socket_chrome.prototype.getInfo = function(continuation) {
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
     this.namespace.getInfo(this.id, continuation);
+  } else if (this.infoAtDisconnect) {
+    this.infoAtDisconnect.then(continuation);
   } else {
     continuation({
       connected: false
@@ -309,6 +314,10 @@ Socket_chrome.freedomErrorCode = function(errorString) {
 Socket_chrome.prototype.dispatchDisconnect = function (code) {
   var errorString = Socket_chrome.errorStringOfCode(code);
   var freedomErrorCode = Socket_chrome.freedomErrorCode(errorString);
+  if (freedomErrorCode == 'CONNECTION_REFUSED') {
+    //debugger;
+    freedomErrorCode = 'CONNECTION_REFUSED';
+  }
   /** @type {string} */ var errorMessage;
   if (freedomErrorCode === 'SUCCESS') {
     errorMessage = 'Socket closed by call to close';
@@ -325,7 +334,7 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
 
   // Don't send more than one dispatchDisconnect event.
   if (this.id) {
-    Socket_chrome.removeActive(this.id);
+    Socket_chrome.removeActive(this);
     delete this.id;
 
     this.dispatchEvent('onDisconnect', errorObject);
