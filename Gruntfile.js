@@ -96,17 +96,16 @@ module.exports = function (grunt) {
         '-W069': true
       }
     },
-    integration: {
+    jasmine_chromeapp: {
       providers: {
+        src: 'spec.js',
         options: {
-          templateId: 'khhlpmfebmkkibipnllkeanfadmigbnj',
-          spec: ['spec.js'],
-          helper: [
-            {path: 'freedom-for-chrome.js', include: false},
-            {path: freedomPrefix + '/providers', name: 'providers', include: false},
-            {path: freedomPrefix + '/spec', name: 'spec', include: false}
+          helpers: [
+            'freedom-for-chrome.js',
+            freedomPrefix + '/providers/**',
+            freedomPrefix + '/spec/**'
           ],
-          keepBrowser: false
+          keepRunner: false
         }
       }
     },
@@ -157,13 +156,13 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-jasmine-chromeapp');
   grunt.loadNpmTasks('grunt-karma');
   grunt.loadNpmTasks('grunt-prompt');
   grunt.loadNpmTasks('grunt-bump');
   grunt.loadNpmTasks('grunt-npm');
   grunt.loadNpmTasks('grunt-shell');
 
-  grunt.loadTasks('tasks');
 
   grunt.registerTask('build', [
     'jshint',
@@ -179,7 +178,7 @@ module.exports = function (grunt) {
     'build',
     'unit',
     'browserify:jasmine_full',
-    'integration'
+    'jasmine_chromeapp'
   ]);
   grunt.registerTask('cordova', [
     'build',
