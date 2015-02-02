@@ -109,7 +109,7 @@ module.exports = function (grunt) {
           paths: [
             'spec.js'
           ],
-          keepRunner: true
+          keepRunner: false
         }
       }
     },
