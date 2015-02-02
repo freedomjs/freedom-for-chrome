@@ -18,6 +18,7 @@
 var freedomPrefix = require('path').dirname(require.resolve('freedom'));
 
 module.exports = function (grunt) {
+  'use strict';
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
@@ -98,14 +99,17 @@ module.exports = function (grunt) {
     },
     jasmine_chromeapp: {
       providers: {
-        src: 'spec.js',
+        files: [
+          {src: 'spec.js', dest: 'spec.js'},
+          {src: 'freedom-for-chrome.js', dest: 'freedom-for-chrome.js'},
+          {src: 'providers/**', dest: '/', cwd: freedomPrefix, expand: true},
+          {src: 'spec/**', dest: '/', cwd: freedomPrefix, expand: true}
+        ],
         options: {
-          helpers: [
-            'freedom-for-chrome.js',
-            freedomPrefix + '/providers/**',
-            freedomPrefix + '/spec/**'
+          paths: [
+            'spec.js'
           ],
-          keepRunner: false
+          keepRunner: true
         }
       }
     },
@@ -192,7 +196,7 @@ module.exports = function (grunt) {
     grunt.task.run([
       'default',
       'prompt:tagMessage',
-      'bump:'+arg,
+      'bump:' + arg,
       'npm-publish',
       'shell:publishWebsite'
     ]);
