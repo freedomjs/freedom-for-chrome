@@ -52,8 +52,13 @@ module.exports = function (grunt) {
     },
     karma: {
       options: {
-        configFile: require.resolve('freedom/karma.conf')
+        configFile: require.resolve('freedom/karma.conf'),
         //Need to run connect:default to host files
+        files: [
+          require.resolve('es5-shim'),
+          require.resolve('es6-promise'),
+          'spec.js',
+        ],
       },
       phantom: {
         browsers: ['PhantomJS'],
@@ -100,13 +105,16 @@ module.exports = function (grunt) {
       providers: {
         options: {
           templateId: 'khhlpmfebmkkibipnllkeanfadmigbnj',
-          spec: ['spec.js'],
+          spec: [
+            'freedom-for-chrome.js',
+            'spec.js'
+          ],
           helper: [
             {path: 'freedom-for-chrome.js', include: false},
             {path: freedomPrefix + '/providers', name: 'providers', include: false},
             {path: freedomPrefix + '/spec', name: 'spec', include: false}
           ],
-          keepBrowser: false
+          keepBrowser: true 
         }
       }
     },
