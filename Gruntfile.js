@@ -18,6 +18,7 @@
 var freedomPrefix = require('path').dirname(require.resolve('freedom'));
 
 module.exports = function (grunt) {
+  'use strict';
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
@@ -101,20 +102,20 @@ module.exports = function (grunt) {
         '-W069': true
       }
     },
-    integration: {
+    jasmine_chromeapp: {
       providers: {
+        files: [
+          {src: 'spec.js', dest: 'spec.js'},
+          {src: 'freedom-for-chrome.js', dest: 'freedom-for-chrome.js'},
+          {src: 'providers/**', dest: '/', cwd: freedomPrefix, expand: true},
+          {src: 'spec/**', dest: '/', cwd: freedomPrefix, expand: true}
+        ],
         options: {
-          templateId: 'khhlpmfebmkkibipnllkeanfadmigbnj',
-          spec: [
+          paths: [
             'freedom-for-chrome.js',
             'spec.js'
           ],
-          helper: [
-            {path: 'freedom-for-chrome.js', include: false},
-            {path: freedomPrefix + '/providers', name: 'providers', include: false},
-            {path: freedomPrefix + '/spec', name: 'spec', include: false}
-          ],
-          keepBrowser: true 
+          keepRunner: false
         }
       }
     },
@@ -165,13 +166,13 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-jasmine-chromeapp');
   grunt.loadNpmTasks('grunt-karma');
   grunt.loadNpmTasks('grunt-prompt');
   grunt.loadNpmTasks('grunt-bump');
   grunt.loadNpmTasks('grunt-npm');
   grunt.loadNpmTasks('grunt-shell');
 
-  grunt.loadTasks('tasks');
 
   grunt.registerTask('build', [
     'jshint',
@@ -187,7 +188,7 @@ module.exports = function (grunt) {
     'build',
     'unit',
     'browserify:jasmine_full',
-    'integration'
+    'jasmine_chromeapp'
   ]);
   grunt.registerTask('cordova', [
     'build',
@@ -201,7 +202,7 @@ module.exports = function (grunt) {
     grunt.task.run([
       'default',
       'prompt:tagMessage',
-      'bump:'+arg,
+      'bump:' + arg,
       'npm-publish',
       'shell:publishWebsite'
     ]);
