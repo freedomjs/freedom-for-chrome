@@ -320,7 +320,7 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
   }
 
   var errorObject = {
-    'errorcode': freedomErrorCode,
+    'errcode': freedomErrorCode,
     'message': errorMessage
   };
 
