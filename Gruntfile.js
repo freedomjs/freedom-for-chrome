@@ -53,8 +53,13 @@ module.exports = function (grunt) {
     },
     karma: {
       options: {
-        configFile: require.resolve('freedom/karma.conf')
+        configFile: require.resolve('freedom/karma.conf'),
         //Need to run connect:default to host files
+        files: [
+          require.resolve('es5-shim'),
+          require.resolve('es6-promise'),
+          'spec.js',
+        ],
       },
       phantom: {
         browsers: ['PhantomJS'],
@@ -100,13 +105,14 @@ module.exports = function (grunt) {
     jasmine_chromeapp: {
       providers: {
         files: [
-          {src: 'spec.js', dest: 'spec.js'},
           {src: 'freedom-for-chrome.js', dest: 'freedom-for-chrome.js'},
           {src: 'providers/**', dest: '/', cwd: freedomPrefix, expand: true},
-          {src: 'spec/**', dest: '/', cwd: freedomPrefix, expand: true}
+          {src: 'spec/**', dest: '/', cwd: freedomPrefix, expand: true},
+          {src: 'spec.js', dest: 'spec.js'},
         ],
         options: {
           paths: [
+            'freedom-for-chrome.js',
             'spec.js'
           ],
           keepRunner: false
