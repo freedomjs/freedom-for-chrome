@@ -24,17 +24,6 @@ describe("integration: storage.isolated.json", require("freedom/spec/providers/s
   .bind(this, window.freedom, "scripts/providers/storage/isolated/storage.isolated.json", {}, false));
 describe("integration: storage.shared.json", require("freedom/spec/providers/storage/storage.integration.src")
   .bind(this, window.freedom, "scripts/providers/storage/shared/storage.shared.json", {}, false));
-/**
-var isolated = "providers/storage/isolated/storage.isolated.json";
-var shared = "providers/storage/shared/storage.shared.json";
-var indexdb = "providers/storage/indexeddb/storage.indexeddb.json";
-describe("integration: storage.isolated.json",
-    require('freedom/spec/providers/storage/storage.integration.src').bind(this, isolated, setup));
-describe("integration: storage.shared.json",
-    require('freedom/spec/providers/storage/storage.integration.src').bind(this, shared, setup, false));
-describe("integration: storage.indexeddb.json",
-    require('freedom/spec/providers/storage/storage.integration.src').bind(this, indexdb, setup));
-**/
 
 // Transport
 describe("integration: transport.webrtc.json",
