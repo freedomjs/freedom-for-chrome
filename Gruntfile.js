@@ -105,17 +105,17 @@ module.exports = function (grunt) {
     jasmine_chromeapp: {
       providers: {
         files: [
-          {src: 'spec.js', dest: 'spec.js'},
           {src: 'freedom-for-chrome.js', dest: 'freedom-for-chrome.js'},
           {src: 'providers/**', dest: '/', cwd: freedomPrefix, expand: true},
-          {src: 'spec/**', dest: '/', cwd: freedomPrefix, expand: true}
+          {src: 'spec/**', dest: '/', cwd: freedomPrefix, expand: true},
+          {src: 'spec.js', dest: 'spec.js'},
         ],
         options: {
           paths: [
             'freedom-for-chrome.js',
             'spec.js'
           ],
-          keepRunner: false
+          keepRunner: true
         }
       }
     },

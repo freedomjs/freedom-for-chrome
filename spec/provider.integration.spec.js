@@ -13,17 +13,17 @@ var setup = function() {
 
 // Social
 describe("integration-single: social.loopback.json", require("freedom/spec/providers/social/social.single.integration.src")
-  .bind(this, window.freedom, "providers/social/loopback/social.loopback.json"), {});
+  .bind(this, window.freedom, "scripts/providers/social/loopback/social.loopback.json"), {});
 describe("integration-single: social.ws.json", require("freedom/spec/providers/social/social.single.integration.src")
-  .bind(this, window.freedom, "providers/social/websocket-server/social.ws.json", {}));
+  .bind(this, window.freedom, "scripts/providers/social/websocket-server/social.ws.json", {}));
 describe("integration-double: social.ws.json", require("freedom/spec/providers/social/social.double.integration.src")
-  .bind(this, window.freedom, "providers/social/websocket-server/social.ws.json", {}));
+  .bind(this, window.freedom, "scripts/providers/social/websocket-server/social.ws.json", {}));
 
 // Storage
 describe("integration: storage.isolated.json", require("freedom/spec/providers/storage/storage.integration.src")
-  .bind(this, window.freedom, "providers/storage/isolated/storage.isolated.json", {}, false));
+  .bind(this, window.freedom, "scripts/providers/storage/isolated/storage.isolated.json", {}, false));
 describe("integration: storage.shared.json", require("freedom/spec/providers/storage/storage.integration.src")
-  .bind(this, window.freedom, "providers/storage/shared/storage.shared.json", {}, false));
+  .bind(this, window.freedom, "scripts/providers/storage/shared/storage.shared.json", {}, false));
 /**
 var isolated = "providers/storage/isolated/storage.isolated.json";
 var shared = "providers/storage/shared/storage.shared.json";
