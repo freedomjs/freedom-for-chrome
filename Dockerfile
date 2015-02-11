@@ -15,7 +15,7 @@ WORKDIR /freedom-for-chrome
 
 RUN npm install
 
-ENV DISPLAY :10
+ENV DISPLAY :99
 
-ENTRYPOINT ["/freedom-for-chrome/tools/docker-entrypoint.sh"]
+# ENTRYPOINT ["/freedom-for-chrome/tools/docker-entrypoint.sh"]
 
