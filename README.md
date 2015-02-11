@@ -1,5 +1,6 @@
 freedom.js for Chrome Apps
 ==========================
+[![Build Status](https://api.shippable.com/projects/54c823bf5ab6cc135289fbd2/badge?branchName=master)](https://app.shippable.com/projects/54c823bf5ab6cc135289fbd2/builds/latest)
 
 A packaging of [freedom.js](https://github.com/freedomjs/freedom) for Chrome
 Packaged Apps.
