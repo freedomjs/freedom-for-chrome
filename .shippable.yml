@@ -8,11 +8,11 @@ notifications:
       - freedom@cs.washington.edu
     on_success: change
     on_failure: always
+before_install:
+  - "export DISPLAY=:10.0"
+  - "Xvfb :10 -screen 0 1280x1024x24 &"
 install:
   - "git pull"
   - "npm install"
-before_script:
-  - "export DISPLAY=:99.0"
-  - "/etc/init.d/xvfb start"
 script:
   - "grunt test"
