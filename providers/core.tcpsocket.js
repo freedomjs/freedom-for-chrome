@@ -207,6 +207,15 @@ Socket_chrome.prototype.write = function(data, cb) {
   }
 
   chrome.sockets.tcp.send(this.id, data, function(sendInfo) {
+    // This will happen when the send callback is invoked after the socket
+    // has closed but before the dispatchDisconnect has been invoked.
+    if (chrome.runtime.lastError) {
+      this.dispatchDisconnect();
+      return cb(undefined, {
+        'errcode': 'NOT_CONNECTED',
+        'message': 'Cannot Write on Closed Socket'
+      });
+    }
     if (sendInfo.resultCode < 0) {
       var errorObject = this.dispatchDisconnect(sendInfo.resultCode);
       return cb(undefined, {
