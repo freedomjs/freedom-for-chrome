@@ -61,6 +61,9 @@ describe("tcpsocket", function() {
             removeListener: function() {}
           }
         }
+      },
+      runtime: {
+        lastError: undefined
       }
     };
 
