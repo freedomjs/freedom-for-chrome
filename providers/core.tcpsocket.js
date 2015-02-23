@@ -223,7 +223,8 @@ Socket_chrome.prototype.write = function(data, cb) {
       this.dispatchDisconnect();
       return cb(undefined, {
         'errcode': 'NOT_CONNECTED',
-        'message': 'Cannot Write on Closed Socket'
+        'message': 'Cannot Write on Closed Socket: ' +
+            chrome.runtime.lastError.message
       });
     }
     if (sendInfo.resultCode < 0) {
