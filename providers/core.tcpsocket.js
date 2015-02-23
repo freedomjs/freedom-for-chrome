@@ -39,7 +39,17 @@ Socket_chrome.prototype.getInfo = function(continuation) {
   if (this.id) {
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
-    this.namespace.getInfo(this.id, continuation);
+    this.namespace.getInfo(this.id, function(info) {
+      // This can happen if the socket is disconnected
+      // before the callback is invoked.
+      if (chrome.runtime.lastError) {
+        continuation({
+          connected: false
+        });
+      } else {
+        continuation(info);
+      }
+    });
   } else {
     continuation({
       connected: false
