@@ -124,8 +124,8 @@ Socket_chrome.prototype.secure = function(cb) {
     return;
   }
   chrome.sockets.tcp.secure(this.id, {}, function(secureResult) {
-    // Always unpause the socket, regardless of whether .secure succeeds.
-    this.unpause().then(function() {
+    // Always resume the socket, regardless of whether .secure succeeds.
+    this.resumePromise().then(function() {
       if (secureResult !== 0) {
         cb(undefined, {
           'errcode': 'CONNECTION_FAILED',
@@ -159,7 +159,7 @@ Socket_chrome.prototype.prepareSecure = function(cb) {
     });
     return;
   }
-  this.pause().then(
+  this.pausePromise().then(
     function() {
       this.prepareSecureCalled = true;
       cb();
@@ -172,12 +172,12 @@ Socket_chrome.prototype.prepareSecure = function(cb) {
 };
 
 /**
- * Pauses the socket
- * @method pause
+ * Pauses the socket.  Internal-only
+ * @method pausePromise
  * @private
  * @returns {Promise} Promise to be fulfilled on pause.
  */
-Socket_chrome.prototype.pause = function() {
+Socket_chrome.prototype.pausePromise = function() {
   if (!this.id) {
     return Promise.reject('Cannot pause disconnected socket');
   }
@@ -187,18 +187,46 @@ Socket_chrome.prototype.pause = function() {
 };
 
 /**
- * Unpauses the socket
- * @method unpause
- * @private
- * @returns {Promise} Promise to be fulfilled on unpause.
+ * Pauses the socket
+ * @method pause
+ * @param {Function} cb Function to call when the pause command is executed.
  */
-Socket_chrome.prototype.unpause = function() {
+Socket_chrome.prototype.pause = function(cb) {
+  this.pausePromise().then(cb, function (errorMessage) {
+    cb(undefined, {
+      'errcode': 'UNKNOWN',
+      'message': errorMessage
+    });
+  });
+};
+
+/**
+ * Unpauses the socket
+ * @method resumePromise
+ * @private
+ * @returns {Promise} Promise to be fulfilled on resume.
+ */
+Socket_chrome.prototype.resumePromise = function() {
   if (!this.id) {
     return Promise.reject('Cannot unpause disconnected socket');
   }
   return new Promise(function(fulfill, reject) {
     chrome.sockets.tcp.setPaused(this.id, false, fulfill);
   }.bind(this));
+};
+
+/**
+ * Unpauses the socket
+ * @method resume
+ * @param {Function} cb Function to call when the resume command is executed.
+ */
+Socket_chrome.prototype.resume = function(cb) {
+  this.resumePromise().then(cb, function (errorMessage) {
+    cb(undefined, {
+      'errcode': 'UNKNOWN',
+      'message': errorMessage
+    });
+  });
 };
 
 /**
