@@ -124,8 +124,8 @@ Socket_chrome.prototype.secure = function(cb) {
     return;
   }
   chrome.sockets.tcp.secure(this.id, {}, function(secureResult) {
-    // Always unpause the socket, regardless of whether .secure succeeds.
-    this.unpause().then(function() {
+    // Always resume the socket, regardless of whether .secure succeeds.
+    this.resume(function(ret, error) {
       if (secureResult !== 0) {
         cb(undefined, {
           'errcode': 'CONNECTION_FAILED',
@@ -134,13 +134,16 @@ Socket_chrome.prototype.secure = function(cb) {
         });
         return;
       }
+      if (error) {
+        cb(undefined, {
+          'errcode': 'CONNECTION_FAILED',
+          'message': 'Secure failed: error unpausing socket: ' +
+              error['message']
+        });
+        return;
+      }
       cb();
-    }.bind(this), function(e) {
-      cb(undefined, {
-        'errcode': 'CONNECTION_FAILED',
-        'message': 'Secure failed: error unpausing socket'
-      });
-    });
+    }.bind(this));
   }.bind(this));
 };
 
@@ -159,46 +162,50 @@ Socket_chrome.prototype.prepareSecure = function(cb) {
     });
     return;
   }
-  this.pause().then(
-    function() {
-      this.prepareSecureCalled = true;
-      cb();
-    }.bind(this), function(e) {
-    cb(undefined, {
-      'errcode': 'CONNECTION_FAILED',
-      'message': 'prepareSecure failed: error pausing socket'
-    });
-  });
+  this.pause(function(ret, error) {
+    if (error) {
+      cb(undefined, {
+        'errcode': 'CONNECTION_FAILED',
+        'message': 'prepareSecure failed: error pausing socket: ' +
+            error['message']
+      });
+      return;
+    }
+    this.prepareSecureCalled = true;
+    cb();
+  }.bind(this));
 };
 
 /**
  * Pauses the socket
  * @method pause
- * @private
- * @returns {Promise} Promise to be fulfilled on pause.
+ * @param {Function} cb Function to call when the pause command is executed.
  */
-Socket_chrome.prototype.pause = function() {
+Socket_chrome.prototype.pause = function(cb) {
   if (!this.id) {
-    return Promise.reject('Cannot pause disconnected socket');
+    cb(undefined, {
+      'errcode': 'UNKNOWN',
+      'message': 'Cannot pause disconnected socket'
+    });
+    return;
   }
-  return new Promise(function(fulfill, reject) {
-    chrome.sockets.tcp.setPaused(this.id, true, fulfill);
-  }.bind(this));
+  chrome.sockets.tcp.setPaused(this.id, true, cb);
 };
 
 /**
  * Unpauses the socket
- * @method unpause
- * @private
- * @returns {Promise} Promise to be fulfilled on unpause.
+ * @method resume
+ * @returns {Promise} Promise to be fulfilled on resume.
  */
-Socket_chrome.prototype.unpause = function() {
+Socket_chrome.prototype.resume = function(cb) {
   if (!this.id) {
-    return Promise.reject('Cannot unpause disconnected socket');
+    cb(undefined, {
+      'errcode': 'UNKNOWN',
+      'message': 'Cannot resume disconnected socket'
+    });
+    return;
   }
-  return new Promise(function(fulfill, reject) {
-    chrome.sockets.tcp.setPaused(this.id, false, fulfill);
-  }.bind(this));
+  chrome.sockets.tcp.setPaused(this.id, false, cb);
 };
 
 /**
