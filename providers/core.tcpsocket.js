@@ -137,7 +137,8 @@ Socket_chrome.prototype.secure = function(cb) {
       if (error) {
         cb(undefined, {
           'errcode': 'CONNECTION_FAILED',
-          'message': 'Secure failed: error unpausing socket'
+          'message': 'Secure failed: error unpausing socket: ' +
+              error['message']
         });
         return;
       }
@@ -165,7 +166,8 @@ Socket_chrome.prototype.prepareSecure = function(cb) {
     if (error) {
       cb(undefined, {
         'errcode': 'CONNECTION_FAILED',
-        'message': 'prepareSecure failed: error pausing socket'
+        'message': 'prepareSecure failed: error pausing socket: ' +
+            error['message']
       });
       return;
     }
