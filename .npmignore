@@ -6,6 +6,7 @@ build_spec/
 .grunt/
 .build
 node_modules/
+shippable/
 
 npm-debug.log
 _SpecRunner.html
