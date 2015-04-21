@@ -133,7 +133,7 @@ Socket_chrome.prototype.secure = function(cb) {
         cb(undefined, {
           'errcode': 'CONNECTION_FAILED',
           'message': 'Secure failed: error unpausing socket: ' +
-            error['message']
+            error.message
         });
         return;
       }
@@ -162,7 +162,7 @@ Socket_chrome.prototype.prepareSecure = function(cb) {
       cb(undefined, {
         'errcode': 'CONNECTION_FAILED',
         'message': 'prepareSecure failed: error pausing socket: ' +
-          error['message']
+          error.message
       });
       return;
     }
@@ -232,8 +232,8 @@ Socket_chrome.prototype.write = function(data, cb) {
     if (sendInfo.resultCode < 0) {
       var errorObject = this.dispatchDisconnect(sendInfo.resultCode);
       return cb(undefined, {
-        'errcode': errorObject['errcode'],
-        'message': 'Send Error: ' + errorObject['message']
+        'errcode': errorObject.errcode,
+        'message': 'Send Error: ' + errorObject.message
       });
     } else if (sendInfo.bytesSent !== data.byteLength) {
       this.dispatchDisconnect();
@@ -531,15 +531,16 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
   chrome.sockets.tcpServer.create({}, function(createInfo) {
     this.id = createInfo.socketId;
     // See https://developer.chrome.com/apps/socket#method-listen
-    chrome.sockets.tcpServer.listen(this.id, address, port,
-                                    // TODO: find out what the default is, and what this really means, the
-                                    // webpage is pretty sparse on it:
-                                    //   https://developer.chrome.com/apps/socket#method-listen
-                                    //
-                                    // Length of the socket's listen queue (number of pending connections
-                                    // to open)
-                                    100,
-                                    this.startAcceptLoop.bind(this, callback));
+    chrome.sockets.tcpServer.listen(
+      this.id, address, port,
+      // TODO: find out what the default is, and what this really means, the
+      // webpage is pretty sparse on it:
+      //   https://developer.chrome.com/apps/socket#method-listen
+      //
+      // Length of the socket's listen queue (number of pending connections
+      // to open)
+      100,
+      this.startAcceptLoop.bind(this, callback));
   }.bind(this));
 };
 
