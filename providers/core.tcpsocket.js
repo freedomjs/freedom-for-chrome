@@ -76,7 +76,7 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
     this.id = createInfo.socketId;
     try {
       chrome.sockets.tcp.connect(this.id, hostname, port, function(result) {
-        var error = chromeErrorHandler(result);
+        var error = Socket_chrome.chromeErrorHandler(result);
         if (error) {
           cb(undefined, error);
         } else {
@@ -298,24 +298,12 @@ Socket_chrome.FREEDOM_ERROR_MAP = {
   'UNKNOWN': 'UNKNOWN'
 };
 
-function chromeErrorHandler(result) {
-  if (result < 0) {
-    var errorString = Socket_chrome.errorStringOfCode(result);
-    var freedomErrorCode = Socket_chrome.freedomErrorCode(errorString);
-    return({
-      'errcode': freedomErrorCode,
-      'message': 'Chrome Connection Failed: ' + errorString +
-        ' ' + chrome.runtime.lastError.message
-    });
-  }
-}
-
 /**
  * Get the Chrome error string associated with a chrome.socket error code.
  * @method errorStringOfCode
  * @static
  * @private
- * @param {Number=} code The error number as described by chrome
+ * @param {Number=} code The error number as described by Chrome
  * @returns {String} The error code as defined in the freedom.js interface.
  */
 Socket_chrome.errorStringOfCode = function(code) {
@@ -333,6 +321,26 @@ Socket_chrome.errorStringOfCode = function(code) {
  */
 Socket_chrome.freedomErrorCode = function(errorString) {
   return Socket_chrome.FREEDOM_ERROR_MAP[errorString] || 'UNKNOWN';
+};
+
+/**
+ * Return an error object appropriate for a given Chrome socket result code
+ * @method chromeErrorHandler
+ * @static
+ * @private
+ * @param {Number=} code The error number as described by Chrome
+ * @returns {Object} An error object (w/errcode and message fields) or nothing
+ */
+Socket_chrome.chromeErrorHandler = function(code) {
+  if (code < 0) {
+    var errorString = Socket_chrome.errorStringOfCode(code);
+    var freedomErrorCode = Socket_chrome.freedomErrorCode(errorString);
+    return({
+      'errcode': freedomErrorCode,
+      'message': 'Chrome Connection Failed: ' + errorString +
+        ' ' + chrome.runtime.lastError.message
+    });
+  }
 };
 
 /*
