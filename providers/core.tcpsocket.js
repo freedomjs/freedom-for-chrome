@@ -510,14 +510,19 @@ Socket_chrome.handleAccept = function (acceptInfo) {
  * @static
  */
 Socket_chrome.handleAcceptError = function (acceptInfo) {
-  var key = Socket_chrome.keyForActive(chrome.sockets.tcpServer,
-                                       acceptInfo.socketId);
-  if (!(key in Socket_chrome.active)) {
-    console.warn('Dropped Accept Error: ', info);
-    return;
-  }
+  var error = Socket_chrome.chromeErrorHandler(acceptInfo.resultCode);
+  if (error) {
+    console.error(error.errcode, error.message);
+  } else {
+    var key = Socket_chrome.keyForActive(chrome.sockets.tcpServer,
+                                         acceptInfo.socketId);
+    if (!(key in Socket_chrome.active)) {
+      console.warn('Dropped Accept Error: ', info);
+      return;
+    }
 
-  Socket_chrome.active[key].dispatchDisconnect(acceptInfo.resultCode);
+    Socket_chrome.active[key].dispatchDisconnect(acceptInfo.resultCode);
+  }
 };
 
 /**
