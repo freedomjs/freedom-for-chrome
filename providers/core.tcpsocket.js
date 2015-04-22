@@ -567,26 +567,15 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
  * https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
  * @private
  */
-Socket_chrome.prototype.startAcceptLoop =
-  function(callbackFromListen, result) {
-    var errorMsg;
-
-    if (result !== 0) {
-      if (Socket_chrome.ERROR_MAP.hasOwnProperty(result)) {
-        errorMsg = 'Chrome Listen failed: ' + Socket_chrome.ERROR_MAP[result];
-      } else {
-        errorMsg = 'Chrome Listen failed: Unknown code ' + result;
-      }
-      callbackFromListen(undefined, {
-        errcode: 'CONNECTION_FAILURE',
-        message: errorMsg
-      });
-      return;
-    }
-
+Socket_chrome.prototype.startAcceptLoop = function(callbackFromListen, result) {
+  var error = Socket_chrome.chromeErrorHandler(result);
+  if (error) {
+    callbackFromListen(undefined, error);
+  } else {
     callbackFromListen();
     Socket_chrome.addActive(this);
-  };
+  }
+};
 
 /**
  * Close and Destroy a socket
