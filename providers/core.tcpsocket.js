@@ -332,7 +332,7 @@ Socket_chrome.freedomErrorCode = function(errorString) {
  * @returns {Object} An error object (w/errcode and message fields) or nothing
  */
 Socket_chrome.chromeErrorHandler = function(code) {
-  if (code < 0) {
+  if (code < 0 || chrome.runtime.lastError) {
     var errorString = Socket_chrome.errorStringOfCode(code);
     var freedomErrorCode = Socket_chrome.freedomErrorCode(errorString);
     return({
