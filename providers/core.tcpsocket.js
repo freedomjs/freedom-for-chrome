@@ -75,15 +75,10 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
   chrome.sockets.tcp.create({}, function(createInfo) {
     this.id = createInfo.socketId;
     try {
-      chrome.sockets.tcp.connect(this.id, hostname, port, function (result) {
-        if (result < 0) {
-          var errorString = Socket_chrome.errorStringOfCode(result);
-          var freedomErrorCode = Socket_chrome.freedomErrorCode(errorString);
-          cb(undefined, {
-            'errcode': freedomErrorCode,
-            'message': 'Chrome Connection Failed: ' + errorString +
-                ' ' + chrome.runtime.lastError.message
-          });
+      chrome.sockets.tcp.connect(this.id, hostname, port, function(result) {
+        var error = Socket_chrome.chromeErrorHandler(result);
+        if (error) {
+          cb(undefined, error);
         } else {
           Socket_chrome.addActive(this);
           cb();
@@ -130,7 +125,7 @@ Socket_chrome.prototype.secure = function(cb) {
         cb(undefined, {
           'errcode': 'CONNECTION_FAILED',
           'message': 'Secure failed: ' + secureResult + ': ' +
-              Socket_chrome.ERROR_MAP[secureResult]
+            Socket_chrome.ERROR_MAP[secureResult]
         });
         return;
       }
@@ -138,7 +133,7 @@ Socket_chrome.prototype.secure = function(cb) {
         cb(undefined, {
           'errcode': 'CONNECTION_FAILED',
           'message': 'Secure failed: error unpausing socket: ' +
-              error['message']
+            error.message
         });
         return;
       }
@@ -167,7 +162,7 @@ Socket_chrome.prototype.prepareSecure = function(cb) {
       cb(undefined, {
         'errcode': 'CONNECTION_FAILED',
         'message': 'prepareSecure failed: error pausing socket: ' +
-            error['message']
+          error.message
       });
       return;
     }
@@ -231,14 +226,14 @@ Socket_chrome.prototype.write = function(data, cb) {
       return cb(undefined, {
         'errcode': 'NOT_CONNECTED',
         'message': 'Cannot Write on Closed Socket: ' +
-            chrome.runtime.lastError.message
+          chrome.runtime.lastError.message
       });
     }
     if (sendInfo.resultCode < 0) {
       var errorObject = this.dispatchDisconnect(sendInfo.resultCode);
       return cb(undefined, {
-        'errcode': errorObject['errcode'],
-        'message': 'Send Error: ' + errorObject['message']
+        'errcode': errorObject.errcode,
+        'message': 'Send Error: ' + errorObject.message
       });
     } else if (sendInfo.bytesSent !== data.byteLength) {
       this.dispatchDisconnect();
@@ -279,7 +274,7 @@ Socket_chrome.ERROR_MAP = {
   '-118': 'CONNECTION_TIMED_OUT',
   '-121': 'SOCKS_CONNECTION_HOST_UNREACHABLE',
   '-200': 'CERT_COMMON_NAME_INVALID',
-   // See Cordova Plugin socket.js
+  // See Cordova Plugin socket.js
   '-1000': 'GENERIC_CORDOVA_FAILURE'
 };
 
@@ -308,12 +303,12 @@ Socket_chrome.FREEDOM_ERROR_MAP = {
  * @method errorStringOfCode
  * @static
  * @private
- * @param {Number=} code The error number as described by chrome
+ * @param {Number=} code The error number as described by Chrome
  * @returns {String} The error code as defined in the freedom.js interface.
  */
 Socket_chrome.errorStringOfCode = function(code) {
   return Socket_chrome.ERROR_MAP[String(code)] ||
-      'UNKNOWN';
+    'UNKNOWN';
 };
 
 /**
@@ -326,6 +321,26 @@ Socket_chrome.errorStringOfCode = function(code) {
  */
 Socket_chrome.freedomErrorCode = function(errorString) {
   return Socket_chrome.FREEDOM_ERROR_MAP[errorString] || 'UNKNOWN';
+};
+
+/**
+ * Return an error object appropriate for a given Chrome socket result code
+ * @method chromeErrorHandler
+ * @static
+ * @private
+ * @param {Number=} code The error number as described by Chrome
+ * @returns {Object} An error object (w/errcode and message fields) or nothing
+ */
+Socket_chrome.chromeErrorHandler = function(code) {
+  if (code < 0 || chrome.runtime.lastError) {
+    var errorString = Socket_chrome.errorStringOfCode(code);
+    var freedomErrorCode = Socket_chrome.freedomErrorCode(errorString);
+    return({
+      'errcode': freedomErrorCode,
+      'message': 'Chrome Connection Failed: ' + errorString +
+        ' ' + chrome.runtime.lastError.message
+    });
+  }
 };
 
 /*
@@ -393,17 +408,17 @@ Socket_chrome.addActive = function(socket) {
     if (chrome.sockets.tcp) {
       chrome.sockets.tcp.onReceive.addListener(Socket_chrome.handleReadData);
       chrome.sockets.tcp.onReceiveError.addListener(
-          Socket_chrome.handleReadError);
+        Socket_chrome.handleReadError);
     }
     if (chrome.sockets.tcpServer) {
       chrome.sockets.tcpServer.onAccept.addListener(
-          Socket_chrome.handleAccept);
+        Socket_chrome.handleAccept);
       chrome.sockets.tcpServer.onAcceptError.addListener(
-          Socket_chrome.handleAcceptError);
+        Socket_chrome.handleAcceptError);
     }
   }
   Socket_chrome.active[Socket_chrome.keyForActive(
-      socket.namespace, socket.id)] = socket;
+    socket.namespace, socket.id)] = socket;
 };
 
 /**
@@ -414,19 +429,19 @@ Socket_chrome.addActive = function(socket) {
  */
 Socket_chrome.removeActive = function(socket) {
   delete Socket_chrome.active[Socket_chrome.keyForActive(
-      socket.namespace, socket.id)];
+    socket.namespace, socket.id)];
   if (Object.keys(Socket_chrome.active).length === 0) {
     if (chrome.sockets.tcp) {
       chrome.sockets.tcp.onReceive.removeListener(
-          Socket_chrome.handleReadData);
+        Socket_chrome.handleReadData);
       chrome.sockets.tcp.onReceiveError.removeListener(
-          Socket_chrome.handleReadError);
+        Socket_chrome.handleReadError);
     }
     if (chrome.sockets.tcpServer) {
       chrome.sockets.tcpServer.onAccept.removeListener(
-          Socket_chrome.handleAccept);
+        Socket_chrome.handleAccept);
       chrome.sockets.tcpServer.onAcceptError.removeListener(
-          Socket_chrome.handleAcceptError);
+        Socket_chrome.handleAcceptError);
     }
   }
 };
@@ -472,7 +487,7 @@ Socket_chrome.handleReadError = function (readInfo) {
  */
 Socket_chrome.handleAccept = function (acceptInfo) {
   var key = Socket_chrome.keyForActive(chrome.sockets.tcpServer,
-      acceptInfo.socketId);
+                                       acceptInfo.socketId);
   if (!(key in Socket_chrome.active)) {
     console.warn('Dropped Accept: ', acceptInfo);
     return;
@@ -495,14 +510,19 @@ Socket_chrome.handleAccept = function (acceptInfo) {
  * @static
  */
 Socket_chrome.handleAcceptError = function (acceptInfo) {
-  var key = Socket_chrome.keyForActive(chrome.sockets.tcpServer,
-      acceptInfo.socketId);
-  if (!(key in Socket_chrome.active)) {
-    console.warn('Dropped Accept Error: ', info);
-    return;
-  }
+  var error = Socket_chrome.chromeErrorHandler(acceptInfo.resultCode);
+  if (error) {
+    console.error(error.errcode, error.message);
+  } else {
+    var key = Socket_chrome.keyForActive(chrome.sockets.tcpServer,
+                                         acceptInfo.socketId);
+    if (!(key in Socket_chrome.active)) {
+      console.warn('Dropped Accept Error: ', info);
+      return;
+    }
 
-  Socket_chrome.active[key].dispatchDisconnect(acceptInfo.resultCode);
+    Socket_chrome.active[key].dispatchDisconnect(acceptInfo.resultCode);
+  }
 };
 
 /**
@@ -524,15 +544,16 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
   chrome.sockets.tcpServer.create({}, function(createInfo) {
     this.id = createInfo.socketId;
     // See https://developer.chrome.com/apps/socket#method-listen
-    chrome.sockets.tcpServer.listen(this.id, address, port,
-        // TODO: find out what the default is, and what this really means, the
-        // webpage is pretty sparse on it:
-        //   https://developer.chrome.com/apps/socket#method-listen
-        //
-        // Length of the socket's listen queue (number of pending connections
-        // to open)
-        100,
-        this.startAcceptLoop.bind(this, callback));
+    chrome.sockets.tcpServer.listen(
+      this.id, address, port,
+      // TODO: find out what the default is, and what this really means, the
+      // webpage is pretty sparse on it:
+      //   https://developer.chrome.com/apps/socket#method-listen
+      //
+      // Length of the socket's listen queue (number of pending connections
+      // to open)
+      100,
+      this.startAcceptLoop.bind(this, callback));
   }.bind(this));
 };
 
@@ -546,25 +567,14 @@ Socket_chrome.prototype.listen = function(address, port, callback) {
  * https://code.google.com/p/chromium/codesearch#chromium/src/net/base/net_error_list.h
  * @private
  */
-Socket_chrome.prototype.startAcceptLoop =
-    function(callbackFromListen, result) {
-  var errorMsg;
-
-  if (result !== 0) {
-    if (Socket_chrome.ERROR_MAP.hasOwnProperty(result)) {
-      errorMsg = 'Chrome Listen failed: ' + Socket_chrome.ERROR_MAP[result];
-    } else {
-      errorMsg = 'Chrome Listen failed: Unknown code ' + result;
-    }
-    callbackFromListen(undefined, {
-      errcode: 'CONNECTION_FAILURE',
-      message: errorMsg
-    });
-    return;
+Socket_chrome.prototype.startAcceptLoop = function(callbackFromListen, result) {
+  var error = Socket_chrome.chromeErrorHandler(result);
+  if (error) {
+    callbackFromListen(undefined, error);
+  } else {
+    callbackFromListen();
+    Socket_chrome.addActive(this);
   }
-
-  callbackFromListen();
-  Socket_chrome.addActive(this);
 };
 
 /**
