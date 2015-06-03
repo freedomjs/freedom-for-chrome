@@ -72,7 +72,7 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
     });
     return;
   }
-  chrome.sockets.tcp.create({}, function(createInfo) {
+  chrome.sockets.tcp.create({'bufferSize' : 1024 * 16}, function(createInfo) {
     this.id = createInfo.socketId;
     try {
       chrome.sockets.tcp.connect(this.id, hostname, port, function(result) {
