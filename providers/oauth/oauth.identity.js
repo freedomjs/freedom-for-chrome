@@ -13,7 +13,7 @@ ChromeIdentityAuth.prototype.initiateOAuth = function(redirectURIs, continuation
   var i;
   if (typeof chrome !== 'undefined' &&
       typeof chrome.permissions !== 'undefined' && //cca doesn't support chrome.permissions yet
-      typeof chrome.identity !== 'undefined') { 
+      typeof chrome.identity !== 'undefined') {
     for (i = 0; i < redirectURIs.length; i += 1) {
       if (redirectURIs[i].indexOf('https://') === 0 &&
           redirectURIs[i].indexOf('.chromiumapp.org') > 0) {
@@ -29,10 +29,13 @@ ChromeIdentityAuth.prototype.initiateOAuth = function(redirectURIs, continuation
   return false;
 };
 
-ChromeIdentityAuth.prototype.launchAuthFlow = function(authUrl, stateObj, continuation) {
+ChromeIdentityAuth.prototype.launchAuthFlow = function(authUrl, stateObj, interactive, continuation) {
+  if (interactive === undefined) {
+    interactive = true;
+  }
   chrome.identity.launchWebAuthFlow({
     url: authUrl,
-    interactive: true
+    interactive: interactive
   }, function(stateObj, continuation, responseUrl) {
     continuation(responseUrl);
   }.bind({}, stateObj, continuation));

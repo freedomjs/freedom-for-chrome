@@ -26,7 +26,7 @@ ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuati
       typeof chrome.tabs !== 'undefined' &&
       typeof chrome.webRequest !== 'undefined' &&
       typeof chromePermissions !== 'undefined' &&
-      typeof chromePermissions.origins !== 'undefined') { 
+      typeof chromePermissions.origins !== 'undefined') {
     for (i = 0; i < redirectURIs.length; i += 1) {
       for (j = 0; j < chromePermissions.origins.length; j++) {
         if (redirectURIs[i].indexOf(chromePermissions.origins[j]) === 0) {
@@ -42,26 +42,29 @@ ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuati
   return false;
 };
 
-ChromeWebRequestAuth.prototype.launchAuthFlow = function(authUrl, stateObj, continuation) {
+ChromeWebRequestAuth.prototype.launchAuthFlow = function(authUrl, stateObj, interactive, continuation) {
   "use strict";
+  if (interactive === undefined) {
+    interactive = true;
+  }
   var listener = this.reqListener.bind(this, stateObj, continuation);
   this.listeners[stateObj.state] = listener;
   chrome.webRequest.onBeforeRequest.addListener(listener, {
     types: ["main_frame"],
     urls: [stateObj.redirect]
   });
-  
+
   chrome.tabs.create({
     url: authUrl,
-    active: true
+    active: interactive
   }, function(stateObj, tab) {
     this.tabs[stateObj.state] = tab;
   }.bind(this, stateObj));
-  
+
   return state;
 };
 
-  
+
 ChromeWebRequestAuth.prototype.reqListener = function(stateObj, continuation, req) {
   "use strict";
   continuation(req.url);
@@ -74,7 +77,7 @@ ChromeWebRequestAuth.prototype.reqListener = function(stateObj, continuation, re
     delete this.tabs[stateObj.state];
   }
 };
-  
+
 /**
  * If we're a chrome extension with correct permissions, we can use url watching
  * to monitor any redirect URL.
