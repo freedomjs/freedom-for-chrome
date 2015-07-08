@@ -115,7 +115,7 @@ module.exports = function (grunt) {
             'freedom-for-chrome.js',
             'spec.js'
           ],
-          keepRunner: false
+          keepRunner: true
         }
       }
     },
@@ -161,7 +161,7 @@ module.exports = function (grunt) {
       }
     }
   });
-  
+
   grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-connect');

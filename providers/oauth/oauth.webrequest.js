@@ -47,7 +47,33 @@ ChromeWebRequestAuth.prototype.launchAuthFlow = function(authUrl, stateObj, inte
   if (interactive === undefined) {
     interactive = true;
   }
-  var listener = this.reqListener.bind(this, stateObj, continuation);
+
+  var invokeContinuation = function(url, isError) {
+    if (isError) {
+      continuation(undefined, 'Error launching auth flow');
+    } else {
+      continuation(url);
+    }
+    // Cleanup listeners.
+    if (this.listeners.hasOwnProperty(stateObj.state)) {
+      chrome.webRequest.onBeforeRequest.removeListener(this.listeners[stateObj.state]);
+      delete this.listeners[stateObj.state];
+    }
+    // Remove Chrome tab.
+    if (this.tabs.hasOwnProperty(stateObj.state)) {
+      chrome.tabs.remove(this.tabs[stateObj.state].id);
+      delete this.tabs[stateObj.state];
+    }
+  }.bind(this);
+
+  // Set to true when we successfully get credentials.
+  var gotCredentials = false;
+
+  // listener function is invoked when Chrome requests the redirect url.
+  var listener = function(req) {
+    gotCredentials = true;
+    invokeContinuation(req.url, false);
+  }.bind(this);
   this.listeners[stateObj.state] = listener;
   chrome.webRequest.onBeforeRequest.addListener(listener, {
     types: ["main_frame"],
@@ -59,23 +85,18 @@ ChromeWebRequestAuth.prototype.launchAuthFlow = function(authUrl, stateObj, inte
     active: interactive
   }, function(stateObj, tab) {
     this.tabs[stateObj.state] = tab;
+    if (!interactive) {
+      // For non-interactive login, close tab and reject if we don't have
+      // credentials within 5 seconds.
+      setTimeout(function() {
+        if (!gotCredentials) {
+          invokeContinuation(null, true);
+        }
+      }.bind(this), 5000);
+    }
   }.bind(this, stateObj));
 
   return state;
-};
-
-
-ChromeWebRequestAuth.prototype.reqListener = function(stateObj, continuation, req) {
-  "use strict";
-  continuation(req.url);
-  if (this.listeners.hasOwnProperty(stateObj.state)) {
-    chrome.webRequest.onBeforeRequest.removeListener(this.listeners[stateObj.state]);
-    delete this.listeners[stateObj.state];
-  }
-  if (this.tabs.hasOwnProperty(stateObj.state)) {
-    chrome.tabs.remove(this.tabs[stateObj.state].id);
-    delete this.tabs[stateObj.state];
-  }
 };
 
 /**

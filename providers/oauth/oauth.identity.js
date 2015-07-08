@@ -37,7 +37,11 @@ ChromeIdentityAuth.prototype.launchAuthFlow = function(authUrl, stateObj, intera
     url: authUrl,
     interactive: interactive
   }, function(stateObj, continuation, responseUrl) {
-    continuation(responseUrl);
+    if (chrome.runtime.lastError) {
+      continuation(undefined, 'Error in launchWebAuthFlow');
+    } else {
+      continuation(responseUrl);
+    }
   }.bind({}, stateObj, continuation));
 };
 
