@@ -44,7 +44,7 @@ ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuati
 
 ChromeWebRequestAuth.prototype.launchAuthFlow = function(authUrl, stateObj, interactive, continuation) {
   "use strict";
-  if (interactive === undefined) {
+  if (typeof interactive === 'undefined') {
     interactive = true;
   }
 

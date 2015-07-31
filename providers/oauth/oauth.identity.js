@@ -30,7 +30,7 @@ ChromeIdentityAuth.prototype.initiateOAuth = function(redirectURIs, continuation
 };
 
 ChromeIdentityAuth.prototype.launchAuthFlow = function(authUrl, stateObj, interactive, continuation) {
-  if (interactive === undefined) {
+  if (typeof interactive === 'undefined') {
     interactive = true;
   }
   chrome.identity.launchWebAuthFlow({
