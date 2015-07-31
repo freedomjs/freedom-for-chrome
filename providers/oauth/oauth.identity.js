@@ -12,7 +12,7 @@ ChromeIdentityAuth.prototype.initiateOAuth = function(redirectURIs, continuation
   "use strict";
   var i;
   if (typeof chrome !== 'undefined' &&
-      typeof chrome.identity !== 'undefined') { 
+      typeof chrome.identity !== 'undefined') {
     for (i = 0; i < redirectURIs.length; i += 1) {
       if (redirectURIs[i].indexOf('https://') === 0 &&
           redirectURIs[i].indexOf('.chromiumapp.org') > 0) {
@@ -28,12 +28,19 @@ ChromeIdentityAuth.prototype.initiateOAuth = function(redirectURIs, continuation
   return false;
 };
 
-ChromeIdentityAuth.prototype.launchAuthFlow = function(authUrl, stateObj, continuation) {
+ChromeIdentityAuth.prototype.launchAuthFlow = function(authUrl, stateObj, interactive, continuation) {
+  if (typeof interactive === 'undefined') {
+    interactive = true;
+  }
   chrome.identity.launchWebAuthFlow({
     url: authUrl,
-    interactive: true
+    interactive: interactive
   }, function(stateObj, continuation, responseUrl) {
-    continuation(responseUrl);
+    if (chrome.runtime.lastError) {
+      continuation(undefined, 'Error in launchWebAuthFlow');
+    } else {
+      continuation(responseUrl);
+    }
   }.bind({}, stateObj, continuation));
 };
 

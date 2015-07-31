@@ -5,6 +5,8 @@ var PromiseCompat = require('es6-promise').Promise;
 var oAuthRedirectId = "freedom.oauth.redirect.handler";
 var chromePermissions;
 
+var TIMEOUT = 5000;
+
 if (typeof chrome !== 'undefined' &&
    typeof chrome.permissions !== 'undefined') {
   chrome.permissions.getAll(function (permissions) {
@@ -26,7 +28,7 @@ ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuati
       typeof chrome.tabs !== 'undefined' &&
       typeof chrome.webRequest !== 'undefined' &&
       typeof chromePermissions !== 'undefined' &&
-      typeof chromePermissions.origins !== 'undefined') { 
+      typeof chromePermissions.origins !== 'undefined') {
     for (i = 0; i < redirectURIs.length; i += 1) {
       for (j = 0; j < chromePermissions.origins.length; j++) {
         if (redirectURIs[i].indexOf(chromePermissions.origins[j]) === 0) {
@@ -42,39 +44,63 @@ ChromeWebRequestAuth.prototype.initiateOAuth = function(redirectURIs, continuati
   return false;
 };
 
-ChromeWebRequestAuth.prototype.launchAuthFlow = function(authUrl, stateObj, continuation) {
+ChromeWebRequestAuth.prototype.launchAuthFlow = function(authUrl, stateObj, interactive, continuation) {
   "use strict";
-  var listener = this.reqListener.bind(this, stateObj, continuation);
+  if (typeof interactive === 'undefined') {
+    interactive = true;
+  }
+
+  var invokeContinuation = function(url, isError) {
+    if (isError) {
+      continuation(undefined, 'Error launching auth flow');
+    } else {
+      continuation(url);
+    }
+    // Cleanup listeners.
+    if (this.listeners.hasOwnProperty(stateObj.state)) {
+      chrome.webRequest.onBeforeRequest.removeListener(this.listeners[stateObj.state]);
+      delete this.listeners[stateObj.state];
+    }
+    // Remove Chrome tab.
+    if (this.tabs.hasOwnProperty(stateObj.state)) {
+      chrome.tabs.remove(this.tabs[stateObj.state].id);
+      delete this.tabs[stateObj.state];
+    }
+  }.bind(this);
+
+  // Set to true when we successfully get credentials.
+  var gotCredentials = false;
+
+  // listener function is invoked when Chrome requests the redirect url.
+  var listener = function(req) {
+    gotCredentials = true;
+    invokeContinuation(req.url, false);
+  }.bind(this);
   this.listeners[stateObj.state] = listener;
   chrome.webRequest.onBeforeRequest.addListener(listener, {
     types: ["main_frame"],
     urls: [stateObj.redirect]
   });
-  
+
   chrome.tabs.create({
     url: authUrl,
-    active: true
+    active: interactive
   }, function(stateObj, tab) {
     this.tabs[stateObj.state] = tab;
+    if (!interactive) {
+      // For non-interactive login, close tab and reject if we don't have
+      // credentials within 5 seconds.
+      setTimeout(function() {
+        if (!gotCredentials) {
+          invokeContinuation(null, true);
+        }
+      }.bind(this), TIMEOUT);
+    }
   }.bind(this, stateObj));
-  
+
   return state;
 };
 
-  
-ChromeWebRequestAuth.prototype.reqListener = function(stateObj, continuation, req) {
-  "use strict";
-  continuation(req.url);
-  if (this.listeners.hasOwnProperty(stateObj.state)) {
-    chrome.webRequest.onBeforeRequest.removeListener(this.listeners[stateObj.state]);
-    delete this.listeners[stateObj.state];
-  }
-  if (this.tabs.hasOwnProperty(stateObj.state)) {
-    chrome.tabs.remove(this.tabs[stateObj.state].id);
-    delete this.tabs[stateObj.state];
-  }
-};
-  
 /**
  * If we're a chrome extension with correct permissions, we can use url watching
  * to monitor any redirect URL.
