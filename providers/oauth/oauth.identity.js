@@ -12,7 +12,6 @@ ChromeIdentityAuth.prototype.initiateOAuth = function(redirectURIs, continuation
   "use strict";
   var i;
   if (typeof chrome !== 'undefined' &&
-      typeof chrome.permissions !== 'undefined' && //cca doesn't support chrome.permissions yet
       typeof chrome.identity !== 'undefined') {
     for (i = 0; i < redirectURIs.length; i += 1) {
       if (redirectURIs[i].indexOf('https://') === 0 &&
