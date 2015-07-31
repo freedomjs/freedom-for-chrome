@@ -5,6 +5,8 @@ var PromiseCompat = require('es6-promise').Promise;
 var oAuthRedirectId = "freedom.oauth.redirect.handler";
 var chromePermissions;
 
+var TIMEOUT = 5000;
+
 if (typeof chrome !== 'undefined' &&
    typeof chrome.permissions !== 'undefined') {
   chrome.permissions.getAll(function (permissions) {
@@ -92,7 +94,7 @@ ChromeWebRequestAuth.prototype.launchAuthFlow = function(authUrl, stateObj, inte
         if (!gotCredentials) {
           invokeContinuation(null, true);
         }
-      }.bind(this), 5000);
+      }.bind(this), TIMEOUT);
     }
   }.bind(this, stateObj));
 
