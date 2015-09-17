@@ -115,7 +115,7 @@ module.exports = function (grunt) {
             'freedom-for-chrome.js',
             'spec.js'
           ],
-          keepRunner: false
+          keepRunner: true
         }
       }
     },

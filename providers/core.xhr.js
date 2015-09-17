@@ -1,0 +1,357 @@
+/*jshint node:true*/
+/*global */
+
+var innerScript = function(portName) {
+  function log(m) {
+    console.log(m);
+    window.document.body.innerText += '\n' + m;
+  }
+
+  var XhrInner = function() {
+    // no extensionId means self-connect to this extension/app.
+    var connectOptions = {name: portName};
+    try {
+      this._port = chrome.runtime.connect(connectOptions);
+      log('Created port ' + this._port.name);
+    } catch (e) {
+      log('connect failed: ' + e);
+    }
+    this._port.onMessage.addListener(this._onMessage.bind(this));
+    this._xhr = new XMLHttpRequest();
+
+    this._events = [
+      "loadstart",
+      "progress",
+      "abort",
+      "error",
+      "load",
+      "timeout",
+      "loadend",
+      "readystatechange"
+    ];
+    this._setupListeners();
+  };
+
+  XhrInner.prototype._onMessage = function(callMsg) {
+    try {
+      log('Calling ' + callMsg.method + '(' + callMsg.args.join(', ') + ')');
+      this[callMsg.method].apply(this, callMsg.args).then(
+          this._resolve.bind(this, callMsg),
+          this._reject.bind(this, callMsg));
+    } catch (e) {
+      log('Exception! ' + e);
+      this._reject(callMsg, e);
+    }
+  };
+
+  XhrInner.prototype._resolve = function(callMsg, returnValue) {
+    log(callMsg.method + '(' + callMsg.args.join(', ') + ') returned ' + returnValue);
+    this._port.postMessage({
+      callId: callMsg.callId,
+      returnValue: returnValue
+    });
+  };
+
+  XhrInner.prototype._reject = function(callMsg, error) {
+    log('Rejecting: ' + error);
+    this._port.postMessage({
+      callId: callMsg.callId,
+      error: error
+    });
+  };
+
+  XhrInner.prototype._dispatchEvent = function(eventName, data) {
+    var eventData = JSON.stringify(data);
+    log('dispatchEvent(' + eventName + ', ' + eventData + ')');
+    this._port.postMessage({
+      eventName: eventName,
+      eventData: eventData
+    });
+  };
+
+  XhrInner.prototype._setupListeners = function() {
+    // Download events
+    this._events.forEach(function (eventName) {
+      this._xhr.addEventListener(eventName, function(eventName, event) {
+        this._dispatchEvent("on" + eventName, event);
+      }.bind(this, eventName), false);
+    }.bind(this));
+
+    // Upload events
+    this._events.forEach(function (eventName) {
+      this._xhr.upload.addEventListener(eventName, function(eventName, event) {
+        this._dispatchEvent("onupload" + eventName, event);
+      }.bind(this, eventName), false);
+    }.bind(this));
+  };
+
+  XhrInner.prototype.open = function(method, url, async, user, password) {
+    if (typeof async !== "undefined" && async !== true) {
+      return Promise.reject({
+        errcode: "InvalidAccessError",
+        message: "async should always be set to true"
+      });
+    }
+
+    // Force async to be true. undefined can lead to async=false in Chrome packaged apps
+    this._xhr.open(method, url, true, user, password);
+    return Promise.resolve();
+  };
+
+  XhrInner.prototype.send = function(data) {
+    log('send(' + data + ')');
+    if (!(data instanceof Object)) {
+      this._xhr.send();
+    } else if (data.hasOwnProperty("string")) {
+      this._xhr.send(data.string);
+    } else if (data.hasOwnProperty("buffer")) {
+      this._xhr.send(data.buffer);
+    } else {
+      this._xhr.send();
+    }
+    return Promise.resolve();
+  };
+
+  XhrInner.prototype.abort = function() {
+    this._xhr.abort();
+    return Promise.resolve();
+  };
+
+  XhrInner.prototype.getResponseHeader = function(header) {
+    return Promise.resolve(this._xhr.getResponseHeader(header));
+  };
+
+  XhrInner.prototype.getAllResponseHeaders = function() {
+    return Promise.resolve(this._xhr.getAllResponseHeaders());
+  };
+
+  XhrInner.prototype.setRequestHeader = function(header, value) {
+    this._xhr.setRequestHeader(header, value);
+    return Promise.resolve();
+  };
+
+  XhrInner.prototype.overrideMimeType = function(mime) {
+    this._xhr.overrideMimeType(mime);
+    return Promise.resolve();
+  };
+
+  XhrInner.prototype.getReadyState = function() {
+    return Promise.resolve(this._xhr.readyState);
+  };
+
+  XhrInner.prototype.getResponse = function() {
+    if (this._xhr.response === null) {
+      return Promise.resolve(null);
+    } else if (this._xhr.responseType === "text" || this._xhr.responseType === "") {
+      return Promise.resolve({ string: this._xhr.response });
+    } else if (this._xhr.responseType === "arraybuffer") {
+      return Promise.resolve({ buffer: this._xhr.response });
+    } else if (this._xhr.responseType === "json") {
+      return Promise.resolve({ object: this._xhr.response });
+    }
+
+    return Promise.reject("core.xhr cannot determine type of response");
+  };
+
+  XhrInner.prototype.getResponseText = function() {
+    return Promise.resolve(this._xhr.responseText);
+  };
+
+  XhrInner.prototype.getResponseURL = function() {
+    return Promise.resolve(this._xhr.responseURL);
+  };
+
+  XhrInner.prototype.getResponseType = function() {
+    return Promise.resolve(this._xhr.responseType);
+  };
+
+  XhrInner.prototype.setResponseType = function(type) {
+    this._xhr.responseType = type;
+    return Promise.resolve();
+  };
+
+  XhrInner.prototype.getStatus = function() {
+    return Promise.resolve(this._xhr.status);
+  };
+
+  XhrInner.prototype.getStatusText = function() {
+    return Promise.resolve(this._xhr.statusText);
+  };
+
+  XhrInner.prototype.getTimeout = function() {
+    return Promise.resolve(this._xhr.timeout);
+  };
+
+  XhrInner.prototype.setTimeout = function(timeout) {
+    this._xhr.timeout = timeout;
+    return Promise.resolve();
+  };
+
+  XhrInner.prototype.getWithCredentials = function() {
+    return Promise.resolve(this._xhr.withCredentials);
+  };
+
+  XhrInner.prototype.setWithCredentials = function(wc) {
+    this._xhr.withCredentials = wc;
+    return Promise.resolve();
+  };
+
+  window._xhrInner = new XhrInner();  // Superstitious, to prevent GC.
+};
+
+// Ensure that each XhrProvider gets the right Webview, if there are multiple
+// XhrProviders created in quick succession.
+var idCounter = 0;
+function getWebviewName() {
+  ++idCounter;
+  return "XHR provider unique name " + idCounter;
+}
+
+function startWebview(name) {
+  // Construct a function call string
+  var startString = "(" + innerScript.toString() + ")('" + name + "')";
+  var webview = window.document.createElement("webview");
+  webview.addEventListener('consolemessage', function(e) {
+    console.log('Webview for ' + name + ' says: ' + e.message);
+  });
+  webview.addEventListener('contentload', function() {
+    webview.executeScript({code: startString});
+    /* webview.addContentScripts([{
+      name: 'myRule',
+      matches: ['http://www.foo.com/*'],
+      css: { files: ['mystyles.css'] },
+      js: { files: ['jquery.js', 'myscript.js'] },
+      run_at: 'document_start'
+    },*/
+  });
+  //webview.src = "data:text/html," +
+  //    encodeURIComponent("<html><body>Hello, World</body></html");
+  //webview.src = "about:blank";
+  webview.src = "https://api.github.com/";
+  window.document.body.appendChild(webview);
+  return webview;
+}
+
+/*
+function startWebview(name) {
+  // Construct a function call string
+  var startString = innerScript.toString() + "(" + name + ")";
+  chrome.app.window.create(, {hidden: false});  // FIXME: hidden true!
+  return null;  // FIXME
+}
+*/
+var XhrProvider = function(cap, dispatchEvent) {
+  this._dispatchEvent = dispatchEvent;
+
+  this._callCounter = 0;
+  this._outstandingCalls = {};
+
+  this._portPromise = new Promise(function(F, R) {
+    this._havePort = F;
+  }.bind(this));
+  var name = getWebviewName();
+  var onConnectShim = function(port) {
+    if (port.name === name) {
+      chrome.runtime.onConnect.removeListener(onConnectShim);
+      this._onConnect(port);
+    }
+  }.bind(this);
+  chrome.runtime.onConnect.addListener(onConnectShim);
+
+  this._webview = startWebview(name);
+
+  var methods = [
+    "open",
+    "send",
+    "abort",
+    "getResponseHeader",
+    "getAllResponseHeaders",
+    "setRequestHeader",
+    "overrideMimeType",
+    "getReadyState",
+    "getResponse",
+    "getResponseText",
+    "getResponseURL",
+    "getResponseType",
+    "setResponseType",
+    "getStatus",
+    "getStatusText",
+    "getTimeout",
+    "setTimeout",
+    "getWithCredentials",
+    "setWithCredentials"
+  ];
+  methods.forEach(this._addMethod.bind(this));
+
+  setTimeout(cap.provider.onClose.bind(
+    cap.provider,
+    this,
+    this._onClose.bind(this)
+  ), 0);
+};
+
+XhrProvider.prototype._onConnect = function(port) {
+  if (this._port) {
+    throw new Error("Duplicate port!");
+  }
+  this._port = port;
+  this._port.onMessage.addListener(this._onMessage.bind(this));
+  this._havePort(port);
+};
+
+XhrProvider.prototype._onMessage = function(msg) {
+  if (msg && msg.eventName) {
+    this._dispatchEvent(msg.eventName, JSON.parse(msg.eventData));
+  } else if (msg && msg.callId in this._outstandingCalls) {
+    var completion = this._outstandingCalls[msg.callId];
+    if (msg.error) {
+      completion.reject(msg.error);
+    } else {
+      completion.resolve(msg.returnValue);
+    }
+    delete this._outstandingCalls[msg.callId];
+  } else {
+    throw new Error("Incomprehensible message: " + JSON.stringify(msg));
+  }
+};
+
+XhrProvider.prototype._addMethod = function(name) {
+  this[name] = function() {
+    // Elementwise copy recommended by V8 team:
+    // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#3-managing-arguments
+    var argsArray = [];
+    for (var i = 0; i < arguments.length; ++i) {
+      argsArray[i] = arguments[i];
+    }
+    return this._forward(name, argsArray);
+  }.bind(this);
+};
+
+XhrProvider.prototype._forward = function(methodName, argsArray) {
+  var completion = {};
+  var promise = new Promise(function(F, R) {
+    completion.resolve = F;
+    completion.reject = R;
+  });
+  var callId = ++this._callCounter;
+  this._outstandingCalls[callId] = completion;
+  this._portPromise.then(function(port) {
+    port.postMessage({
+      callId: callId,
+      method: methodName,
+      args: argsArray
+    });
+  });
+  return promise;
+};
+
+XhrProvider.prototype._onClose = function() {
+  // Dispose of things that might not free automatically with GC.
+  // DEBUG REMOVED REINTRODUCE this._webview.terminate();
+  this._portPromise.then(function(port) { port.disconnect(); });
+};
+
+exports.name = "core.xhr";
+exports.provider = XhrProvider;
+exports.style = "providePromises";
+exports.flags = { provider: true };

@@ -39,7 +39,7 @@ describe("integration: core.rtcpeerconnection",
 // core.xhr
 describe("integration: core.xhr",
     require("freedom/spec/providers/coreIntegration/xhr.integration.src").bind(this,
-    require("freedom/providers/core/core.xhr"), setup));
+    require("../providers/core.xhr"), setup));
 
 // core.tcpsocket
 describe("integration: core.tcpsocket",
