@@ -283,13 +283,13 @@ var XhrProvider = function(cap, dispatchEvent) {
 
   this._webview = startWebview(name);
 
+  // All methods except setRequestHeader, which is handled specially.
   var methods = [
     "open",
     "send",
     "abort",
     "getResponseHeader",
     "getAllResponseHeaders",
-    "setRequestHeader",
     "overrideMimeType",
     "getReadyState",
     "getResponse",
@@ -372,6 +372,19 @@ XhrProvider.prototype._onClose = function() {
   // Dispose of things that might not free automatically with GC.
   cleanupWebview(this._webview);
   this._portPromise.then(function(port) { port.disconnect(); });
+};
+
+XhrProvider.prototype.setRequestHeader = function(header, value) {
+  var setHeader = function(details) {
+    details.requestHeaders.push({
+      name: header,
+      value: value
+    });
+    return {requestHeaders: details.requestHeaders};
+  };
+  this._webview.request.onBeforeSendHeaders.addListener(setHeader, {
+    urls: ["<all_urls>"]
+  }, ["requestHeaders", "blocking"]);
 };
 
 exports.name = "core.xhr";
