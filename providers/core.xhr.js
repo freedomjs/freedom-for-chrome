@@ -69,10 +69,42 @@ var innerScript = function(portName) {
     });
   };
 
+  XhrInner.prototype._polyfillProgressEvent = function(event) {
+    // ProgressEvents are missing all their attributes!  We fill in as best we
+    // can.
+    event = {};  // Modifying the broken ProgressEvent doesn't work!
+    event.loaded = 0;
+    var response = this._xhr.response;
+    if (response) {
+      var responseType = this._xhr.responseType;
+      if (responseType === "" || responseType === "text") {
+        event.loaded = response.length;
+      } else if (responseType === "arraybuffer") {
+        event.loaded = response.byteLength;
+      } else if (responseType === "blob") {
+        event.loaded = response.size;
+      } else if (responseType === "json") {
+        event.loaded = JSON.stringify(response).length;
+      }
+    }
+    
+    if (this._xhr.readyState === 4) {  // DONE
+      event.lengthComputable = true;
+      event.total = event.loaded;
+    } else {
+      event.lengthComputable = false;
+      event.total = 0;
+    }
+    return event;
+  };
+
   XhrInner.prototype._setupListeners = function() {
     // Download events
     this._events.forEach(function (eventName) {
       this._xhr.addEventListener(eventName, function(eventName, event) {
+        if (eventName !== "readystatechange") {
+          event = this._polyfillProgressEvent(event);
+        }
         this._dispatchEvent("on" + eventName, event);
       }.bind(this, eventName), false);
     }.bind(this));
@@ -80,6 +112,9 @@ var innerScript = function(portName) {
     // Upload events
     this._events.forEach(function (eventName) {
       this._xhr.upload.addEventListener(eventName, function(eventName, event) {
+        if (eventName !== "readystatechange") {
+          event = this._polyfillProgressEvent(event);
+        }
         this._dispatchEvent("onupload" + eventName, event);
       }.bind(this, eventName), false);
     }.bind(this));
@@ -216,30 +251,18 @@ function startWebview(name) {
   });
   webview.addEventListener('contentload', function() {
     webview.executeScript({code: startString});
-    /* webview.addContentScripts([{
-      name: 'myRule',
-      matches: ['http://www.foo.com/*'],
-      css: { files: ['mystyles.css'] },
-      js: { files: ['jquery.js', 'myscript.js'] },
-      run_at: 'document_start'
-    },*/
   });
-  //webview.src = "data:text/html," +
-  //    encodeURIComponent("<html><body>Hello, World</body></html");
-  //webview.src = "about:blank";
-  webview.src = "https://api.github.com/";
+  webview.src = "about:blank";
+  webview.style.display = "none";
   window.document.body.appendChild(webview);
   return webview;
 }
 
-/*
-function startWebview(name) {
-  // Construct a function call string
-  var startString = innerScript.toString() + "(" + name + ")";
-  chrome.app.window.create(, {hidden: false});  // FIXME: hidden true!
-  return null;  // FIXME
+function cleanupWebview(webview) {
+  webview.terminate();
+  window.document.removeChild(webview);
 }
-*/
+
 var XhrProvider = function(cap, dispatchEvent) {
   this._dispatchEvent = dispatchEvent;
 
@@ -347,7 +370,7 @@ XhrProvider.prototype._forward = function(methodName, argsArray) {
 
 XhrProvider.prototype._onClose = function() {
   // Dispose of things that might not free automatically with GC.
-  // DEBUG REMOVED REINTRODUCE this._webview.terminate();
+  cleanupWebview(this._webview);
   this._portPromise.then(function(port) { port.disconnect(); });
 };
 
