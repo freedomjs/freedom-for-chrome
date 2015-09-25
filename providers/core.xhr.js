@@ -1,10 +1,82 @@
 /*jshint node:true*/
 /*global */
 
+  function debuffer(obj, arrayPaths, path) {
+    if (!path) {
+      path = [];
+    }
+    if (typeof obj !== 'object') {
+      return;
+    }
+    for (var key in obj) {
+      var nextPath = path.concat(key);
+      if (obj[key] instanceof ArrayBuffer) {
+        console.log('stringifying arraybuffer at ' + nextPath.join(', '));
+        var buffer = obj[key];
+        var view = new Uint8Array(buffer);
+        obj[key] = view.join(',');
+        arrayPaths.push(nextPath);
+        console.log('arrayPaths.length==' + arrayPaths.length);
+      } else {
+        debuffer(obj[key], arrayPaths, nextPath);
+      }
+    }
+  }
+
+  function rebuffer(obj, arrayPaths) {
+    arrayPaths.forEach(function(path) {
+      console.log('Reconstructing arraybuffer at ' + path.join(', '));
+      var subObj = obj;
+      for (var i = 0; i < path.length - 1; ++i) {
+        subObj = subObj[path[i]];
+      }
+      var lastKey = path[path.length - 1];
+      var value = subObj[lastKey];
+      var view = new Uint8Array(value.split(','));
+      subObj[lastKey] = view.buffer;
+    });
+  }
+
 var innerScript = function(portName) {
   function log(m) {
     console.log(m);
     window.document.body.innerText += '\n' + m;
+  }
+
+  function debuffer(obj, arrayPaths, path) {
+    if (!path) {
+      path = [];
+    }
+    if (typeof obj !== 'object') {
+      return;
+    }
+    for (var key in obj) {
+      var nextPath = path.concat(key);
+      if (obj[key] instanceof ArrayBuffer) {
+        console.log('stringifying arraybuffer at ' + nextPath.join(', '));
+        var buffer = obj[key];
+        var view = new Uint8Array(buffer);
+        obj[key] = view.join(',');
+        arrayPaths.push(nextPath);
+        console.log('arrayPaths.length==' + arrayPaths.length);
+      } else {
+        debuffer(obj[key], arrayPaths, nextPath);
+      }
+    }
+  }
+
+  function rebuffer(obj, arrayPaths) {
+    arrayPaths.forEach(function(path) {
+      console.log('Reconstructing arraybuffer at ' + path.join(', '));
+      var subObj = obj;
+      for (var i = 0; i < path.length - 1; ++i) {
+        subObj = subObj[path[i]];
+      }
+      var lastKey = path[path.length - 1];
+      var value = subObj[lastKey];
+      var view = new Uint8Array(value.split(','));
+      subObj[lastKey] = view.buffer;
+    });
   }
 
   var XhrInner = function() {
@@ -33,6 +105,8 @@ var innerScript = function(portName) {
   };
 
   XhrInner.prototype._onMessage = function(callMsg) {
+    rebuffer(callMsg.obj, callMsg.paths);
+    callMsg = callMsg.obj;
     try {
       log('Calling ' + callMsg.method + '(' + callMsg.args.join(', ') + ')');
       this[callMsg.method].apply(this, callMsg.args).then(
@@ -44,9 +118,19 @@ var innerScript = function(portName) {
     }
   };
 
+  XhrInner.prototype._postMessage = function(msg) {
+    var paths = [];
+    debuffer(msg, paths);
+    console.log('Debuffered paths: ' + paths.length);
+    this._port.postMessage({
+      obj: msg,
+      paths: paths
+    });
+  };
+
   XhrInner.prototype._resolve = function(callMsg, returnValue) {
     log(callMsg.method + '(' + callMsg.args.join(', ') + ') returned ' + returnValue);
-    this._port.postMessage({
+    this._postMessage({
       callId: callMsg.callId,
       returnValue: returnValue
     });
@@ -54,7 +138,7 @@ var innerScript = function(portName) {
 
   XhrInner.prototype._reject = function(callMsg, error) {
     log('Rejecting: ' + error);
-    this._port.postMessage({
+    this._postMessage({
       callId: callMsg.callId,
       error: error
     });
@@ -63,7 +147,7 @@ var innerScript = function(portName) {
   XhrInner.prototype._dispatchEvent = function(eventName, data) {
     var eventData = JSON.stringify(data);
     log('dispatchEvent(' + eventName + ', ' + eventData + ')');
-    this._port.postMessage({
+    this._postMessage({
       eventName: eventName,
       eventData: eventData
     });
@@ -181,6 +265,7 @@ var innerScript = function(portName) {
     } else if (this._xhr.responseType === "text" || this._xhr.responseType === "") {
       return Promise.resolve({ string: this._xhr.response });
     } else if (this._xhr.responseType === "arraybuffer") {
+      log('responseType is arraybuffer; response is ' + this._xhr.response.toString());
       return Promise.resolve({ buffer: this._xhr.response });
     } else if (this._xhr.responseType === "json") {
       return Promise.resolve({ object: this._xhr.response });
@@ -261,7 +346,7 @@ function startWebview(name) {
 
 function cleanupWebview(webview) {
   webview.terminate();
-  window.document.removeChild(webview);
+  window.document.body.removeChild(webview);
 }
 
 var XhrProvider = function(cap, dispatchEvent) {
@@ -324,6 +409,11 @@ XhrProvider.prototype._onConnect = function(port) {
 };
 
 XhrProvider.prototype._onMessage = function(msg) {
+  if (msg) {
+    rebuffer(msg.obj, msg.paths);
+    msg = msg.obj;
+  }
+
   if (msg && msg.eventName) {
     this._dispatchEvent(msg.eventName, JSON.parse(msg.eventData));
   } else if (msg && msg.callId in this._outstandingCalls) {
@@ -351,7 +441,19 @@ XhrProvider.prototype._addMethod = function(name) {
   }.bind(this);
 };
 
+XhrProvider.prototype._postMessage = function(msg) {
+  var paths = [];
+  debuffer(msg, paths);
+  this._portPromise.then(function(port) {
+    port.postMessage({
+      obj: msg,
+      paths: paths
+    });
+  });
+};
+
 XhrProvider.prototype._forward = function(methodName, argsArray) {
+  console.log(methodName + '(' + argsArray.join(', ') + ')');
   var completion = {};
   var promise = new Promise(function(F, R) {
     completion.resolve = F;
@@ -359,12 +461,10 @@ XhrProvider.prototype._forward = function(methodName, argsArray) {
   });
   var callId = ++this._callCounter;
   this._outstandingCalls[callId] = completion;
-  this._portPromise.then(function(port) {
-    port.postMessage({
-      callId: callId,
-      method: methodName,
-      args: argsArray
-    });
+  this._postMessage({
+    callId: callId,
+    method: methodName,
+    args: argsArray
   });
   return promise;
 };
@@ -376,11 +476,13 @@ XhrProvider.prototype._onClose = function() {
 };
 
 XhrProvider.prototype.setRequestHeader = function(header, value) {
+  console.log('setRequestHeader(' + header + ', ' + value + ')');
   var setHeader = function(details) {
     details.requestHeaders.push({
       name: header,
       value: value
     });
+    console.log('setRequestHeader action: ' + JSON.stringify(details.requestHeaders));
     return {requestHeaders: details.requestHeaders};
   };
   this._webview.request.onBeforeSendHeaders.addListener(setHeader, {
