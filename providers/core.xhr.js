@@ -69,10 +69,11 @@ var innerScript = function(portName) {
     });
   };
 
-  XhrInner.prototype._polyfillProgressEvent = function(event) {
+  XhrInner.prototype._polyfillProgressEvent = function(eventName, event) {
     // ProgressEvents are missing all their attributes!  We fill in as best we
-    // can.
+    // can.  TODO: Only do this if the provided event is broken.
     event = {};  // Modifying the broken ProgressEvent doesn't work!
+    event.type = eventName;
     event.loaded = 0;
     var response = this._xhr.response;
     if (response) {
@@ -103,7 +104,7 @@ var innerScript = function(portName) {
     this._events.forEach(function (eventName) {
       this._xhr.addEventListener(eventName, function(eventName, event) {
         if (eventName !== "readystatechange") {
-          event = this._polyfillProgressEvent(event);
+          event = this._polyfillProgressEvent(eventName, event);
         }
         this._dispatchEvent("on" + eventName, event);
       }.bind(this, eventName), false);
