@@ -11,12 +11,10 @@
     for (var key in obj) {
       var nextPath = path.concat(key);
       if (obj[key] instanceof ArrayBuffer) {
-        console.log('stringifying arraybuffer at ' + nextPath.join(', '));
         var buffer = obj[key];
         var view = new Uint8Array(buffer);
         obj[key] = view.join(',');
         arrayPaths.push(nextPath);
-        console.log('arrayPaths.length==' + arrayPaths.length);
       } else {
         debuffer(obj[key], arrayPaths, nextPath);
       }
@@ -25,7 +23,6 @@
 
   function rebuffer(obj, arrayPaths) {
     arrayPaths.forEach(function(path) {
-      console.log('Reconstructing arraybuffer at ' + path.join(', '));
       var subObj = obj;
       for (var i = 0; i < path.length - 1; ++i) {
         subObj = subObj[path[i]];
@@ -38,11 +35,6 @@
   }
 
 var innerScript = function(portName) {
-  function log(m) {
-    console.log(m);
-    window.document.body.innerText += '\n' + m;
-  }
-
   function debuffer(obj, arrayPaths, path) {
     if (!path) {
       path = [];
@@ -53,12 +45,10 @@ var innerScript = function(portName) {
     for (var key in obj) {
       var nextPath = path.concat(key);
       if (obj[key] instanceof ArrayBuffer) {
-        console.log('stringifying arraybuffer at ' + nextPath.join(', '));
         var buffer = obj[key];
         var view = new Uint8Array(buffer);
         obj[key] = view.join(',');
         arrayPaths.push(nextPath);
-        console.log('arrayPaths.length==' + arrayPaths.length);
       } else {
         debuffer(obj[key], arrayPaths, nextPath);
       }
@@ -67,7 +57,6 @@ var innerScript = function(portName) {
 
   function rebuffer(obj, arrayPaths) {
     arrayPaths.forEach(function(path) {
-      console.log('Reconstructing arraybuffer at ' + path.join(', '));
       var subObj = obj;
       for (var i = 0; i < path.length - 1; ++i) {
         subObj = subObj[path[i]];
@@ -84,9 +73,8 @@ var innerScript = function(portName) {
     var connectOptions = {name: portName};
     try {
       this._port = chrome.runtime.connect(connectOptions);
-      log('Created port ' + this._port.name);
     } catch (e) {
-      log('connect failed: ' + e);
+      console.log('connect failed: ' + e);
     }
     this._port.onMessage.addListener(this._onMessage.bind(this));
     this._xhr = new XMLHttpRequest();
@@ -108,12 +96,12 @@ var innerScript = function(portName) {
     rebuffer(callMsg.obj, callMsg.paths);
     callMsg = callMsg.obj;
     try {
-      log('Calling ' + callMsg.method + '(' + callMsg.args.join(', ') + ')');
+      console.log('Calling ' + callMsg.method + '(' + callMsg.args.join(', ') + ')');
       this[callMsg.method].apply(this, callMsg.args).then(
           this._resolve.bind(this, callMsg),
           this._reject.bind(this, callMsg));
     } catch (e) {
-      log('Exception! ' + e);
+      console.log('Exception! ' + e);
       this._reject(callMsg, e);
     }
   };
@@ -121,7 +109,6 @@ var innerScript = function(portName) {
   XhrInner.prototype._postMessage = function(msg) {
     var paths = [];
     debuffer(msg, paths);
-    console.log('Debuffered paths: ' + paths.length);
     this._port.postMessage({
       obj: msg,
       paths: paths
@@ -129,7 +116,7 @@ var innerScript = function(portName) {
   };
 
   XhrInner.prototype._resolve = function(callMsg, returnValue) {
-    log(callMsg.method + '(' + callMsg.args.join(', ') + ') returned ' + returnValue);
+    console.log(callMsg.method + '(' + callMsg.args.join(', ') + ') returned ' + returnValue);
     this._postMessage({
       callId: callMsg.callId,
       returnValue: returnValue
@@ -137,7 +124,7 @@ var innerScript = function(portName) {
   };
 
   XhrInner.prototype._reject = function(callMsg, error) {
-    log('Rejecting: ' + error);
+    console.log('Rejecting: ' + error);
     this._postMessage({
       callId: callMsg.callId,
       error: error
@@ -146,7 +133,7 @@ var innerScript = function(portName) {
 
   XhrInner.prototype._dispatchEvent = function(eventName, data) {
     var eventData = JSON.stringify(data);
-    log('dispatchEvent(' + eventName + ', ' + eventData + ')');
+    console.log('dispatchEvent(' + eventName + ', ' + eventData + ')');
     this._postMessage({
       eventName: eventName,
       eventData: eventData
@@ -219,7 +206,6 @@ var innerScript = function(portName) {
   };
 
   XhrInner.prototype.send = function(data) {
-    log('send(' + data + ')');
     if (!(data instanceof Object)) {
       this._xhr.send();
     } else if (data.hasOwnProperty("string")) {
@@ -265,7 +251,6 @@ var innerScript = function(portName) {
     } else if (this._xhr.responseType === "text" || this._xhr.responseType === "") {
       return Promise.resolve({ string: this._xhr.response });
     } else if (this._xhr.responseType === "arraybuffer") {
-      log('responseType is arraybuffer; response is ' + this._xhr.response.toString());
       return Promise.resolve({ buffer: this._xhr.response });
     } else if (this._xhr.responseType === "json") {
       return Promise.resolve({ object: this._xhr.response });
@@ -325,7 +310,7 @@ var innerScript = function(portName) {
 var idCounter = 0;
 function getWebviewName() {
   ++idCounter;
-  return "XHR provider unique name " + idCounter;
+  return "XHR inner " + idCounter;
 }
 
 function startWebview(name) {
@@ -348,6 +333,24 @@ function cleanupWebview(webview) {
   webview.terminate();
   window.document.body.removeChild(webview);
 }
+
+/*
+// HACKHACKHACK only use one webview
+var name = 'fooview';
+var webview = window.document.createElement("webview");
+webview.addEventListener('contentload', function() {
+  console.log('contentload fired on the webview');
+});
+webview.src = "about:blank";
+webview.style.display = "none";
+window.document.body.appendChild(webview);
+function getWebviewName() { return name; }
+function startWebview(name) {
+  var startString = "(" + innerScript.toString() + ")('" + name + "')";
+  webview.executeScript({code: startString});
+}
+function cleanupWebview(webview) {}
+*/
 
 var XhrProvider = function(cap, dispatchEvent) {
   this._dispatchEvent = dispatchEvent;
@@ -415,12 +418,15 @@ XhrProvider.prototype._onMessage = function(msg) {
   }
 
   if (msg && msg.eventName) {
+    console.log('XhrProvider dispatchEvent(' + msg.eventName + ', ' + msg.eventData + ')');
     this._dispatchEvent(msg.eventName, JSON.parse(msg.eventData));
   } else if (msg && msg.callId in this._outstandingCalls) {
     var completion = this._outstandingCalls[msg.callId];
     if (msg.error) {
+      console.log('XhrProvider rejecting with ' + JSON.stringify(msg.error));
       completion.reject(msg.error);
     } else {
+      console.log('XhrProvider resolving with ' + JSON.stringify(msg.returnValue));
       completion.resolve(msg.returnValue);
     }
     delete this._outstandingCalls[msg.callId];
@@ -453,7 +459,7 @@ XhrProvider.prototype._postMessage = function(msg) {
 };
 
 XhrProvider.prototype._forward = function(methodName, argsArray) {
-  console.log(methodName + '(' + argsArray.join(', ') + ')');
+  console.log('XhrProvider forwarding ' + methodName + '(' + argsArray.join(', ') + ')');
   var completion = {};
   var promise = new Promise(function(F, R) {
     completion.resolve = F;
@@ -476,7 +482,7 @@ XhrProvider.prototype._onClose = function() {
 };
 
 XhrProvider.prototype.setRequestHeader = function(header, value) {
-  console.log('setRequestHeader(' + header + ', ' + value + ')');
+  console.log('XhrProvider::setRequestHeader(' + header + ', ' + value + ')');
   var setHeader = function(details) {
     details.requestHeaders.push({
       name: header,
