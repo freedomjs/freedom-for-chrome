@@ -35,6 +35,7 @@
   }
 
 var innerScript = function(portName) {
+  console.log('innerScript(' + portName + ')');
   function debuffer(obj, arrayPaths, path) {
     if (!path) {
       path = [];
@@ -69,6 +70,7 @@ var innerScript = function(portName) {
   }
 
   var XhrInner = function() {
+    console.log('Constructing');
     // no extensionId means self-connect to this extension/app.
     var connectOptions = {name: portName};
     try {
@@ -314,6 +316,7 @@ function getWebviewName() {
 }
 
 function startWebview(name) {
+  console.log('Starting new webview for ' + name);
   // Construct a function call string
   var startString = "(" + innerScript.toString() + ")('" + name + "')";
   var webview = window.document.createElement("webview");
@@ -321,6 +324,7 @@ function startWebview(name) {
     console.log('Webview for ' + name + ' says: ' + e.message);
   });
   webview.addEventListener('contentload', function() {
+    console.log('contentload fired for ' + name);
     webview.executeScript({code: startString});
   });
   webview.src = "about:blank";
@@ -334,25 +338,10 @@ function cleanupWebview(webview) {
   window.document.body.removeChild(webview);
 }
 
-/*
-// HACKHACKHACK only use one webview
-var name = 'fooview';
-var webview = window.document.createElement("webview");
-webview.addEventListener('contentload', function() {
-  console.log('contentload fired on the webview');
-});
-webview.src = "about:blank";
-webview.style.display = "none";
-window.document.body.appendChild(webview);
-function getWebviewName() { return name; }
-function startWebview(name) {
-  var startString = "(" + innerScript.toString() + ")('" + name + "')";
-  webview.executeScript({code: startString});
-}
-function cleanupWebview(webview) {}
-*/
-
 var XhrProvider = function(cap, dispatchEvent) {
+  var name = getWebviewName();
+  this._id = idCounter;
+  this._log('Constructing');
   this._dispatchEvent = dispatchEvent;
 
   this._callCounter = 0;
@@ -361,8 +350,8 @@ var XhrProvider = function(cap, dispatchEvent) {
   this._portPromise = new Promise(function(F, R) {
     this._havePort = F;
   }.bind(this));
-  var name = getWebviewName();
   var onConnectShim = function(port) {
+    this._log('onConnectShim: port.name is ' + port.name);
     if (port.name === name) {
       chrome.runtime.onConnect.removeListener(onConnectShim);
       this._onConnect(port);
@@ -402,10 +391,16 @@ var XhrProvider = function(cap, dispatchEvent) {
   ), 0);
 };
 
+XhrProvider.prototype._log = function(msg) {
+  console.log('XhrProvider ' + this._id + ': ' + msg);
+};
+
 XhrProvider.prototype._onConnect = function(port) {
   if (this._port) {
-    throw new Error("Duplicate port!");
+    this._log('Duplicate port');
+    return;
   }
+  this._log('Connected!');
   this._port = port;
   this._port.onMessage.addListener(this._onMessage.bind(this));
   this._havePort(port);
@@ -418,15 +413,15 @@ XhrProvider.prototype._onMessage = function(msg) {
   }
 
   if (msg && msg.eventName) {
-    console.log('XhrProvider dispatchEvent(' + msg.eventName + ', ' + msg.eventData + ')');
+    this._log('dispatchEvent(' + msg.eventName + ', ' + msg.eventData + ')');
     this._dispatchEvent(msg.eventName, JSON.parse(msg.eventData));
   } else if (msg && msg.callId in this._outstandingCalls) {
     var completion = this._outstandingCalls[msg.callId];
     if (msg.error) {
-      console.log('XhrProvider rejecting with ' + JSON.stringify(msg.error));
+      this._log('rejecting with ' + JSON.stringify(msg.error));
       completion.reject(msg.error);
     } else {
-      console.log('XhrProvider resolving with ' + JSON.stringify(msg.returnValue));
+      this._log('resolving with ' + JSON.stringify(msg.returnValue));
       completion.resolve(msg.returnValue);
     }
     delete this._outstandingCalls[msg.callId];
@@ -459,7 +454,7 @@ XhrProvider.prototype._postMessage = function(msg) {
 };
 
 XhrProvider.prototype._forward = function(methodName, argsArray) {
-  console.log('XhrProvider forwarding ' + methodName + '(' + argsArray.join(', ') + ')');
+  this._log('forwarding ' + methodName + '(' + argsArray.join(', ') + ')');
   var completion = {};
   var promise = new Promise(function(F, R) {
     completion.resolve = F;
@@ -482,13 +477,13 @@ XhrProvider.prototype._onClose = function() {
 };
 
 XhrProvider.prototype.setRequestHeader = function(header, value) {
-  console.log('XhrProvider::setRequestHeader(' + header + ', ' + value + ')');
+  this._log('setRequestHeader(' + header + ', ' + value + ')');
   var setHeader = function(details) {
     details.requestHeaders.push({
       name: header,
       value: value
     });
-    console.log('setRequestHeader action: ' + JSON.stringify(details.requestHeaders));
+    this._log('setRequestHeader action: ' + JSON.stringify(details.requestHeaders));
     return {requestHeaders: details.requestHeaders};
   };
   this._webview.request.onBeforeSendHeaders.addListener(setHeader, {
