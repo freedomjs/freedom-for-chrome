@@ -1,6 +1,16 @@
 /*jshint node:true*/
 /*global */
 
+// The Chrome Port API only passes true JSON objects, and JSON can't serialize
+// ArrayBuffers.  XMLHttpRequest::response can be an ArrayBuffer, as can the
+// argument to send()!  To resolve this conflict, these functions convert
+// ArrayBuffers to and from JSON.  Specifically, they recursively walk any input
+// object, find attributes that are ArrayBuffers, and munge the object in such a
+// way that the transformation can be reversed by the recipient.  The algorithm
+// is designed to be secure: it should be safe to transform any object, and to
+// de-transform any object that was transformed.
+// TODO:  Switch from using Chrome Ports to window.postMessage.  The latter
+// supports all "transferable" objects, including ArrayBuffers.
   function debuffer(obj, arrayPaths, path) {
     if (!path) {
       path = [];
@@ -69,17 +79,10 @@ var innerScript = function(portName) {
     });
   }
 
-  var XhrInner = function() {
+  var XhrInner = function(wrappedPost) {
     console.log('Constructing');
-    // no extensionId means self-connect to this extension/app.
-    var connectOptions = {name: portName};
-    try {
-      this._port = chrome.runtime.connect(connectOptions);
-    } catch (e) {
-      console.log('connect failed: ' + e);
-    }
-    this._port.onMessage.addListener(this._onMessage.bind(this));
     this._xhr = new XMLHttpRequest();
+    this._wrappedPost = wrappedPost;
 
     this._events = [
       "loadstart",
@@ -94,11 +97,10 @@ var innerScript = function(portName) {
     this._setupListeners();
   };
 
-  XhrInner.prototype._onMessage = function(callMsg) {
+  XhrInner.prototype.onMessage = function(callMsg) {
     rebuffer(callMsg.obj, callMsg.paths);
     callMsg = callMsg.obj;
     try {
-      console.log('Calling ' + callMsg.method + '(' + callMsg.args.join(', ') + ')');
       this[callMsg.method].apply(this, callMsg.args).then(
           this._resolve.bind(this, callMsg),
           this._reject.bind(this, callMsg));
@@ -111,14 +113,13 @@ var innerScript = function(portName) {
   XhrInner.prototype._postMessage = function(msg) {
     var paths = [];
     debuffer(msg, paths);
-    this._port.postMessage({
+    this._wrappedPost({
       obj: msg,
       paths: paths
     });
   };
 
   XhrInner.prototype._resolve = function(callMsg, returnValue) {
-    console.log(callMsg.method + '(' + callMsg.args.join(', ') + ') returned ' + returnValue);
     this._postMessage({
       callId: callMsg.callId,
       returnValue: returnValue
@@ -135,7 +136,6 @@ var innerScript = function(portName) {
 
   XhrInner.prototype._dispatchEvent = function(eventName, data) {
     var eventData = JSON.stringify(data);
-    console.log('dispatchEvent(' + eventName + ', ' + eventData + ')');
     this._postMessage({
       eventName: eventName,
       eventData: eventData
@@ -304,19 +304,60 @@ var innerScript = function(portName) {
     return Promise.resolve();
   };
 
-  window._xhrInner = new XhrInner();  // Superstitious, to prevent GC.
+  // no extensionId means self-connect to this extension/app.
+  window._xhrInners = {};
+  var connectOptions = {name: portName};
+  var port;
+  try {
+    port = chrome.runtime.connect(connectOptions);
+  } catch (e) {
+    console.log('connect failed: ' + e);
+  }
+  port.onMessage.addListener(function (msg) {
+    var id = msg.id;
+    if (msg.command === 'construct') {
+      window._xhrInners[id] = new XhrInner(function(contents) {
+        port.postMessage({
+          id: id,
+          contents: contents
+        });
+      });
+    } else if (msg.command === 'destroy') {
+      delete window._xhrInners[id];
+    } else if (msg.command === 'forward') {
+      window._xhrInners[id].onMessage(msg.contents);
+    }
+  });
 };
 
-// Ensure that each XhrProvider gets the right Webview, if there are multiple
-// XhrProviders created in quick succession.
-var idCounter = 0;
-function getWebviewName() {
-  ++idCounter;
-  return "XHR inner " + idCounter;
-}
+var MAGIC_HEADER = 'X-Core-XHR-Host';
+var webviewName = 'core.xhr webview';
+var havePort;
+var portPromise = new Promise(function(F, R) {
+  havePort = F;
+});
+portPromise.then(function(port) { console.log('portPromise fulfilled'); });
+var portListeners = {};  // id -> listener function
 
 function startWebview(name) {
-  console.log('Starting new webview for ' + name);
+  var onConnectShim = function(port) {
+    console.log('onConnectShim: port.name is ' + port.name);
+    if (port.name === webviewName) {
+      chrome.runtime.onConnect.removeListener(onConnectShim);
+      port.onMessage.addListener(function(msg) {
+        var listener = portListeners[msg.id];
+        if (listener) {
+          listener(msg.contents);
+        } else {
+          console.warn('Dropping message: ' + JSON.stringify(msg));
+        }
+      });
+      havePort(port);
+    }
+  };
+  chrome.runtime.onConnect.addListener(onConnectShim);
+
+  console.log('Starting new webview: ' + name);
   // Construct a function call string
   var startString = "(" + innerScript.toString() + ")('" + name + "')";
   var webview = window.document.createElement("webview");
@@ -330,6 +371,20 @@ function startWebview(name) {
   webview.src = "about:blank";
   webview.style.display = "none";
   window.document.body.appendChild(webview);
+
+  var setHeader = function(details) {
+    details.requestHeaders.forEach(function(entry) {
+      if (entry.name === MAGIC_HEADER) {
+        entry.name = 'Host';
+      }
+    });
+    console.log('setRequestHeader action: ' + JSON.stringify(details.requestHeaders));
+    return {requestHeaders: details.requestHeaders};
+  }.bind(this);
+  webview.request.onBeforeSendHeaders.addListener(setHeader, {
+    urls: ["<all_urls>"]
+  }, ["requestHeaders", "blocking"]);
+
   return webview;
 }
 
@@ -338,28 +393,52 @@ function cleanupWebview(webview) {
   window.document.body.removeChild(webview);
 }
 
+function constructInner(id) {
+  return portPromise.then(function(port) {
+    port.postMessage({
+      id: id,
+      command: 'construct'
+    });
+  });
+}
+
+function destroyInner(id) {
+  return portPromise.then(function(port) {
+    port.postMessage({
+      id: id,
+      command: 'destroy'
+    });
+  });
+}
+
+function sendMessage(id, contents) {
+  return portPromise.then(function(port) {
+    port.postMessage({
+      id: id,
+      command: 'forward',
+      contents: contents
+    });
+  });
+}
+
+var webview;
+
+var idCounter = 0;
+
 var XhrProvider = function(cap, dispatchEvent) {
-  var name = getWebviewName();
-  this._id = idCounter;
-  this._log('Constructing');
+  if (!webview) {
+    webview = startWebview(webviewName);
+  }
+
   this._dispatchEvent = dispatchEvent;
+
+  this._id = ++idCounter;
+  portListeners[this._id] = this._onMessage.bind(this);
+  constructInner(this._id);
+  this._log('Constructing');
 
   this._callCounter = 0;
   this._outstandingCalls = {};
-
-  this._portPromise = new Promise(function(F, R) {
-    this._havePort = F;
-  }.bind(this));
-  var onConnectShim = function(port) {
-    this._log('onConnectShim: port.name is ' + port.name);
-    if (port.name === name) {
-      chrome.runtime.onConnect.removeListener(onConnectShim);
-      this._onConnect(port);
-    }
-  }.bind(this);
-  chrome.runtime.onConnect.addListener(onConnectShim);
-
-  this._webview = startWebview(name);
 
   // All methods except setRequestHeader, which is handled specially.
   var methods = [
@@ -395,17 +474,6 @@ XhrProvider.prototype._log = function(msg) {
   console.log('XhrProvider ' + this._id + ': ' + msg);
 };
 
-XhrProvider.prototype._onConnect = function(port) {
-  if (this._port) {
-    this._log('Duplicate port');
-    return;
-  }
-  this._log('Connected!');
-  this._port = port;
-  this._port.onMessage.addListener(this._onMessage.bind(this));
-  this._havePort(port);
-};
-
 XhrProvider.prototype._onMessage = function(msg) {
   if (msg) {
     rebuffer(msg.obj, msg.paths);
@@ -413,7 +481,6 @@ XhrProvider.prototype._onMessage = function(msg) {
   }
 
   if (msg && msg.eventName) {
-    this._log('dispatchEvent(' + msg.eventName + ', ' + msg.eventData + ')');
     this._dispatchEvent(msg.eventName, JSON.parse(msg.eventData));
   } else if (msg && msg.callId in this._outstandingCalls) {
     var completion = this._outstandingCalls[msg.callId];
@@ -421,7 +488,6 @@ XhrProvider.prototype._onMessage = function(msg) {
       this._log('rejecting with ' + JSON.stringify(msg.error));
       completion.reject(msg.error);
     } else {
-      this._log('resolving with ' + JSON.stringify(msg.returnValue));
       completion.resolve(msg.returnValue);
     }
     delete this._outstandingCalls[msg.callId];
@@ -445,16 +511,13 @@ XhrProvider.prototype._addMethod = function(name) {
 XhrProvider.prototype._postMessage = function(msg) {
   var paths = [];
   debuffer(msg, paths);
-  this._portPromise.then(function(port) {
-    port.postMessage({
-      obj: msg,
-      paths: paths
-    });
+  sendMessage(this._id, {
+    obj: msg,
+    paths: paths
   });
 };
 
 XhrProvider.prototype._forward = function(methodName, argsArray) {
-  this._log('forwarding ' + methodName + '(' + argsArray.join(', ') + ')');
   var completion = {};
   var promise = new Promise(function(F, R) {
     completion.resolve = F;
@@ -471,24 +534,16 @@ XhrProvider.prototype._forward = function(methodName, argsArray) {
 };
 
 XhrProvider.prototype._onClose = function() {
-  // Dispose of things that might not free automatically with GC.
-  cleanupWebview(this._webview);
-  this._portPromise.then(function(port) { port.disconnect(); });
+  destroyInner(this._id);
+  delete portListeners[this._id];
 };
 
 XhrProvider.prototype.setRequestHeader = function(header, value) {
-  this._log('setRequestHeader(' + header + ', ' + value + ')');
-  var setHeader = function(details) {
-    details.requestHeaders.push({
-      name: header,
-      value: value
-    });
-    this._log('setRequestHeader action: ' + JSON.stringify(details.requestHeaders));
-    return {requestHeaders: details.requestHeaders};
-  };
-  this._webview.request.onBeforeSendHeaders.addListener(setHeader, {
-    urls: ["<all_urls>"]
-  }, ["requestHeaders", "blocking"]);
+  // TODO: Consider supporting other forbidden header names
+  if (header === 'Host') {
+    header = MAGIC_HEADER;
+  }
+  this._forward('setRequestHeader', [header, value]);
 };
 
 exports.name = "core.xhr";
