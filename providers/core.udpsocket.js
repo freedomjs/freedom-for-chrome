@@ -37,7 +37,7 @@ UdpSocket_chrome.prototype.bind = function(address, port, continuation) {
         UdpSocket_chrome.addActive(this.id, this);
       } else {
         continuation(undefined, {
-          errcode: "BIND_FAILED",
+          errcode: "UNKNOWN",
           message: "Failed to Bind: " + bindResult
         });
       }
@@ -118,7 +118,7 @@ UdpSocket_chrome.handleReadError = function(info) {
 UdpSocket_chrome.prototype.sendTo = function(data, address, port, cb) {
   if (!this.id) {
     cb(undefined, {
-      "errcode": "SOCKET_CLOSED",
+      "errcode": "SEND_FAILED",
       "message": "Cannot Write on Closed Socket"
     });
     return;
@@ -141,8 +141,8 @@ UdpSocket_chrome.prototype.destroy = function(continuation) {
     continuation();
   } else {
     continuation(undefined, {
-      "errcode": "SOCKET_CLOSED",
-      "message": "Socket Already Closed"
+      "errcode": "ALREADY_CLOSED",
+      "message": "Socket already closed"
     });
   }
 };
