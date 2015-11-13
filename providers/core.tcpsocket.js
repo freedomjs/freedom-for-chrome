@@ -73,24 +73,60 @@ Socket_chrome.prototype.connect = function(hostname, port, cb) {
     return;
   }
   chrome.sockets.tcp.create({'bufferSize' : 1024 * 16}, function(createInfo) {
-    this.id = createInfo.socketId;
+    this.afterCreate_(hostname, port, createInfo, cb);
+  }.bind(this));
+};
+
+/**
+ * Next steps after chrome.sockets.tcp.create returns
+ * @method afterCreate_
+ * @private
+ * @param {String} hostname The host or ip to connect to.
+ * @param {number} port The port to connect on.
+ * @param {Object} createInfo The return value of sockets.tcp.create.
+ * @param {Function} cb Function to call with completion or error.
+ */
+Socket_chrome.prototype.afterCreate_ = function(hostname, port, createInfo, cb) {
+  this.id = createInfo.socketId;
+  if (this.prepareSecureCalled) {
     try {
-      chrome.sockets.tcp.connect(this.id, hostname, port, function(result) {
-        var error = Socket_chrome.chromeErrorHandler(result);
-        if (error) {
-          cb(undefined, error);
-        } else {
-          Socket_chrome.addActive(this);
-          cb();
-        }
-      }.bind(this));
+      chrome.sockets.tcp.setPaused(this.id, true,
+          this.connectInternal_.bind(this, hostname, port, cb));
     } catch (e) {
       cb(undefined, {
         'errcode': 'CONNECTION_FAILED',
-        'message': 'Chrome Connection Failed: ' + e.message
+        'message': 'Failed to pause before connecting: ' + e.message
       });
     }
-  }.bind(this));
+  } else {
+    this.connectInternal_(hostname, port, cb);
+  }
+};
+
+/**
+ * Connect to a designated location after a socket is created and prepared.
+ * @method connectInternal_
+ * @param {String} hostname The host or ip to connect to.
+ * @param {number} port The port to connect on.
+ * @param {Function} cb Function to call with completion or error.
+ */
+Socket_chrome.prototype.connectInternal_ = function(hostname, port, cb) {
+  try {
+    chrome.sockets.tcp.connect(this.id, hostname, port, function(result) {
+      var error = Socket_chrome.chromeErrorHandler(result);
+      if (error) {
+        cb(undefined, error);
+      } else {
+        Socket_chrome.addActive(this);
+        cb();
+      }
+    }.bind(this));
+  } catch (e) {
+    cb(undefined, {
+      'errcode': 'CONNECTION_FAILED',
+      'message': 'Chrome Connection Failed: ' + e.message
+    });
+  }
 };
 
 /**
@@ -151,10 +187,10 @@ Socket_chrome.prototype.secure = function(cb) {
  */
 Socket_chrome.prototype.prepareSecure = function(cb) {
   if (!this.id) {
-    cb(undefined, {
-      'errcode': 'NOT_CONNECTED',
-      'message': 'Cannot prepareSecure a disconnected socket'
-    });
+    // ::connect will check this flag and pause the socket before
+    // creating it.
+    this.prepareSecureCalled = true;
+    cb();
     return;
   }
   this.pause(function(ret, error) {
