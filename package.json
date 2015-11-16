@@ -2,6 +2,7 @@
   "name": "freedom-for-chrome",
   "description": "Embracing a distributed web",
   "version": "0.4.20",
+  "license": "Apache-2.0",
   "homepage": "http://freedomjs.org",
   "bugs": {
     "url": "http://github.com/freedomjs/freedom-for-chrome/issues",
