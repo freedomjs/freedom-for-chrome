@@ -13,6 +13,14 @@ var UdpSocket_chrome = function(cap, dispatchEvent) {
 };
 
 /**
+ * @private
+ * @return {boolean}
+ */
+UdpSocket_chrome.prototype.hasId = function() {
+  return typeof this.id === 'number';
+};
+
+/**
  * A static list of active sockets, so that global on-receive messages
  * from chrome can be routed properly.
  * @static
@@ -51,7 +59,7 @@ UdpSocket_chrome.prototype.bind = function(address, port, continuation) {
  * @return {Object} connection and address information about the socket.
  */
 UdpSocket_chrome.prototype.getInfo = function(continuation) {
-  if (this.id) {
+  if (this.hasId()) {
     chrome.sockets.udp.getInfo(this.id, continuation);
   } else {
     continuation({
@@ -116,7 +124,7 @@ UdpSocket_chrome.handleReadError = function(info) {
  * @param {Function} cb A function to call after writing completes.
  */
 UdpSocket_chrome.prototype.sendTo = function(data, address, port, cb) {
-  if (!this.id) {
+  if (!this.hasId()) {
     cb(undefined, {
       "errcode": "SEND_FAILED",
       "message": "Cannot Write on Closed Socket"
@@ -135,9 +143,9 @@ UdpSocket_chrome.prototype.sendTo = function(data, address, port, cb) {
  * @param {Function} continuation Function to call after socket destroyed.
  */
 UdpSocket_chrome.prototype.destroy = function(continuation) {
-  if (this.id && this.id !== 'INVALID') {
+  if (this.hasId()) {
     chrome.sockets.udp.close(this.id);
-    this.id = 'INVALID';
+    this.id = undefined;
     continuation();
   } else {
     continuation(undefined, {

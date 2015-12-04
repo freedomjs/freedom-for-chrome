@@ -13,10 +13,18 @@ var Socket_chrome = function(cap, dispatchEvent, id) {
   this.id = id || undefined;
   this.namespace = chrome.sockets.tcp;
   this.prepareSecureCalled = false;
-  if (this.id) {
+  if (this.hasId()) {
     Socket_chrome.addActive(this);
     chrome.sockets.tcp.setPaused(this.id, false);
   }
+};
+
+/**
+ * @private
+ * @return {boolean}
+ */
+Socket_chrome.prototype.hasId = function() {
+  return typeof this.id === 'number';
 };
 
 /**
@@ -36,7 +44,7 @@ Socket_chrome.active = {};
  * @return {Object} connection and address information about the socket.
  */
 Socket_chrome.prototype.getInfo = function(continuation) {
-  if (this.id) {
+  if (this.hasId()) {
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
     this.namespace.getInfo(this.id, function(info) {
@@ -65,7 +73,7 @@ Socket_chrome.prototype.getInfo = function(continuation) {
  * @param {Function} cb Function to call with completion or error.
  */
 Socket_chrome.prototype.connect = function(hostname, port, cb) {
-  if (this.id) {
+  if (this.hasId()) {
     cb(undefined, {
       'errcode': 'ALREADY_CONNECTED',
       'message': 'Cannot Connect Existing Socket'
@@ -135,7 +143,7 @@ Socket_chrome.prototype.connectInternal_ = function(hostname, port, cb) {
  * @param {Function} cb Function to call with completion or error.
  */
 Socket_chrome.prototype.secure = function(cb) {
-  if (!this.id) {
+  if (!this.hasId()) {
     cb(undefined, {
       'errcode': 'NOT_CONNECTED',
       'message': 'Cannot secure a disconnected socket'
@@ -186,7 +194,7 @@ Socket_chrome.prototype.secure = function(cb) {
  * @param {Function} cb Function to call with completion or error.
  */
 Socket_chrome.prototype.prepareSecure = function(cb) {
-  if (!this.id) {
+  if (!this.hasId()) {
     // ::connect will check this flag and pause the socket before
     // creating it.
     this.prepareSecureCalled = true;
@@ -229,7 +237,7 @@ Socket_chrome.prototype.pause = function(cb) {
  * @returns {Promise} Promise to be fulfilled on resume.
  */
 Socket_chrome.prototype.resume = function(cb) {
-  if (!this.id) {
+  if (!this.hasId()) {
     cb(undefined, {
       'errcode': 'UNKNOWN',
       'message': 'Cannot resume disconnected socket'
@@ -246,7 +254,7 @@ Socket_chrome.prototype.resume = function(cb) {
  * @param {Function} cb Function to call when data is written
  */
 Socket_chrome.prototype.write = function(data, cb) {
-  if (!this.id) {
+  if (!this.hasId()) {
     cb(undefined, {
       'errcode': 'NOT_CONNECTED',
       'message': 'Cannot Write on Closed Socket'
@@ -405,7 +413,7 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
   };
 
   // Don't send more than one dispatchDisconnect event.
-  if (this.id) {
+  if (this.hasId()) {
     Socket_chrome.removeActive(this.id);
     delete this.id;
 
@@ -569,7 +577,7 @@ Socket_chrome.handleAcceptError = function (acceptInfo) {
  * @param {Function} callback Callback to call when listening has occured.
  */
 Socket_chrome.prototype.listen = function(address, port, callback) {
-  if (this.id) {
+  if (this.hasId()) {
     callback(undefined, {
       errcode: 'ALREADY_CONNECTED',
       message: 'Cannot Listen on existing socket.'
@@ -619,7 +627,7 @@ Socket_chrome.prototype.startAcceptLoop = function(callbackFromListen, result) {
  * @param {Function} continuation Function to call once socket is destroyed.
  */
 Socket_chrome.prototype.close = function(continuation) {
-  if (this.id) {
+  if (this.hasId()) {
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
     this.namespace.close(this.id, function() {
