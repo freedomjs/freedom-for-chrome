@@ -43,6 +43,9 @@ describe("tcpsocket", function() {
           onReceiveError: {
             addListener: function() {},
             removeListener: function() {}
+          },
+          close: function(socketId, callback) {
+            callback();
           }
         },
         tcpServer: {
@@ -59,6 +62,9 @@ describe("tcpsocket", function() {
           onAcceptError: {
             addListener: function() {},
             removeListener: function() {}
+          },
+          close: function(socketId, callback) {
+            callback();
           }
         }
       },

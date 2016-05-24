@@ -414,6 +414,9 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
 
   // Don't send more than one dispatchDisconnect event.
   if (this.hasId()) {
+    // Every socket must be explicitly closed, even if it has already been
+    // disconnected, to avoid a memory leak.
+    this.namespace.close(this.id, function() {});
     Socket_chrome.removeActive(this.id);
     delete this.id;
 
