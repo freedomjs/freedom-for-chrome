@@ -60,6 +60,7 @@ module.exports = function (grunt) {
           require.resolve('es6-promise'),
           'spec.js',
         ],
+        reporters: ['progress', 'story', 'junit', 'coverage', 'saucelabs', 'unicorn'],
       },
       phantom: {
         browsers: ['PhantomJS'],
