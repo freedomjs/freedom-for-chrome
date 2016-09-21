@@ -517,6 +517,8 @@ Socket_chrome.handleReadData = function (readInfo) {
  * @static
  */
 Socket_chrome.handleReadError = function (readInfo) {
+  console.log("HANDLE READ ERROR!");
+  console.log(readInfo);
   var key = Socket_chrome.keyForActive(chrome.sockets.tcp, readInfo.socketId);
   if (!(key in Socket_chrome.active)) {
     console.warn('Dropped Read Error: ', readInfo);
@@ -631,9 +633,11 @@ Socket_chrome.prototype.startAcceptLoop = function(callbackFromListen, result) {
  */
 Socket_chrome.prototype.close = function(continuation) {
   if (this.hasId()) {
+    console.log("trying clean disconnect");
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
     this.namespace.close(this.id, function() {
+      console.log("Tried clean disconnect");
       this.dispatchDisconnect(0);
       continuation();
     }.bind(this));
