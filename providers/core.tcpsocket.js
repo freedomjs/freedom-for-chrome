@@ -517,6 +517,11 @@ Socket_chrome.handleReadData = function (readInfo) {
  * @static
  */
 Socket_chrome.handleReadError = function (readInfo) {
+  if (readInfo.resultCode === -100) {
+    // Hack to deal with unhandled runtime.lastError
+    // https://github.com/freedomjs/freedom-for-chrome/issues/90
+    readInfo.resultCode = 0;  // replace CONNECTION_CLOSED with SUCCESS
+  }
   var key = Socket_chrome.keyForActive(chrome.sockets.tcp, readInfo.socketId);
   if (!(key in Socket_chrome.active)) {
     console.warn('Dropped Read Error: ', readInfo);
