@@ -416,7 +416,12 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
   if (this.hasId()) {
     // Every socket must be explicitly closed, even if it has already been
     // disconnected, to avoid a memory leak.
-    this.namespace.close(this.id, function() {});
+    this.namespace.close(this.id, function() {
+      if (chrome.runtime.lastError) {
+        // https://github.com/freedomjs/freedom-for-chrome/issues/90
+        console.warn("Ignoring runtime.lastError, socket is closed");
+      }
+    });
     Socket_chrome.removeActive(this.id);
     delete this.id;
 
