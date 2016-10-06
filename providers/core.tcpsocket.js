@@ -13,6 +13,7 @@ var Socket_chrome = function(cap, dispatchEvent, id) {
   this.id = id || undefined;
   this.namespace = chrome.sockets.tcp;
   this.prepareSecureCalled = false;
+  this.closingId = undefined;
   if (this.hasId()) {
     Socket_chrome.addActive(this);
     chrome.sockets.tcp.setPaused(this.id, false);
@@ -419,7 +420,7 @@ Socket_chrome.prototype.dispatchDisconnect = function (code) {
     this.namespace.close(this.id, function() {
       if (chrome.runtime.lastError) {
         // https://github.com/freedomjs/freedom-for-chrome/issues/90
-        console.warn("Ignoring runtime.lastError, socket is closed");
+        console.log("Ignoring runtime.lastError, socket is closed");
       }
     });
     Socket_chrome.removeActive(this.id);
@@ -522,15 +523,17 @@ Socket_chrome.handleReadData = function (readInfo) {
  * @static
  */
 Socket_chrome.handleReadError = function (readInfo) {
-  if (readInfo.resultCode === -100) {
-    // Hack to deal with unhandled runtime.lastError
-    // https://github.com/freedomjs/freedom-for-chrome/issues/90
-    readInfo.resultCode = 0;  // replace CONNECTION_CLOSED with SUCCESS
-  }
   var key = Socket_chrome.keyForActive(chrome.sockets.tcp, readInfo.socketId);
   if (!(key in Socket_chrome.active)) {
     console.warn('Dropped Read Error: ', readInfo);
     return;
+  }
+  if (readInfo.resultCode === -100 &&
+      readInfo.socketId === Socket_chrome.active[key].closingId) {
+    console.log("Overriding CONNECTION_CLOSED with SUCCESS");
+    // Hack to deal with unhandled runtime.lastError
+    // https://github.com/freedomjs/freedom-for-chrome/issues/90
+    readInfo.resultCode = 0;  // replace CONNECTION_CLOSED with SUCCESS
   }
   Socket_chrome.active[key].dispatchDisconnect(readInfo.resultCode);
 };
@@ -643,6 +646,7 @@ Socket_chrome.prototype.close = function(continuation) {
   if (this.hasId()) {
     // Note: this.namespace used, since this method is common to tcp and
     // tcpServer sockets.
+    this.closingId = this.id;  // to ensure dispatching correct close msg
     this.namespace.close(this.id, function() {
       this.dispatchDisconnect(0);
       continuation();
