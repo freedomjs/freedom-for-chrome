@@ -21,7 +21,7 @@
     "es5-shim": "^4.5.9",
     "es6-promise": "^4.0.5",
     "folderify": "^1.2.1",
-    "freedom": "~0.6.35",
+    "freedom": "~0.6.36",
     "grunt": "^1.0.1",
     "grunt-browserify": "^5.0.0",
     "grunt-bump": "^0.8.0",
@@ -50,7 +50,7 @@
     "webrtc-adapter": "0.0.7"
   },
   "peerDependencies": {
-    "freedom": "~0.6.35"
+    "freedom": "~0.6.36"
   },
   "scripts": {}
 }
